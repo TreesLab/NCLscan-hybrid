@@ -39,8 +39,8 @@ fi
 
 # Out of circle: long read extends more than 100 bp on one side (upstream or downstream)  
 echo -n > $out\_OC.result  
-ls $input > input.list
-cat input.list  | while read one
+
+ls $input | while read one
 do
    one_name=$(echo $one | sed 's/\.bed12//g')
    intra_chr=$(echo $one | sed 's/:/\t/g' | awk '{print $1}')

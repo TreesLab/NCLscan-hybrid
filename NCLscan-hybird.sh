@@ -41,52 +41,61 @@ fi
 
 
 source $config
-BASEDIR=$(pwd)
+# BASEDIR=$(pwd)
 
 
-rm -r -f $out
-rm -r -f $out/tmp
-rm -r -f $out/pass1
-rm -r -f $out/fail1
-rm -r -f $out/pass2_intra
-rm -r -f $out/pass2_inter
+rm -rf $out
 
-mkdir $out
-mkdir $out/tmp
-mkdir $out/pass1
-mkdir $out/fail1
-mkdir $out/pass2_intra
-mkdir $out/pass2_inter
+mkdir -p \
+    $out \
+    $out/tmp \
+    $out/pass1 \
+    $out/fail1 \
+    $out/pass2_intra \
+    $out/pass2_inter 
+
 
 echo -n > $out/$out\_long_intra.result
 echo -n > $out/$out\_long_inter.result
 
 echo "Step: to create flankingSeqs of NCL events" 
 
-$NCLsl_bin/FlankingSeq.sh -nclscan $NCLscan -fl 100 -gtf $gtf -g $genome_prefix.fa -bedtools $bedtools_link  -mps $NCLsl_bin/merge_paired_sequences.py -o $out/$out\_100bp
+$NCLsl_bin/FlankingSeq.sh \
+   -nclscan $NCLscan \
+   -fl 100 \
+   -gtf $gtf \
+   -g $genome_prefix.fa \
+   -bedtools $bedtools_link  \
+   -mps $NCLsl_bin/merge_paired_sequences.py \
+   -o $out/$out\_100bp
 
 echo "Step: to align long reads against flankingSeqs"
-#$minimap2_link -d $out/$out\_100bp_flanking_merged.mmi $out/$out\_100bp_flanking_merged.fa   
+# $minimap2_link -d $out/$out\_100bp_flanking_merged.mmi $out/$out\_100bp_flanking_merged.fa   
 $minimap2_link -t 10 -x map-$long_type $out/$out\_100bp_flanking_merged.fa $longread > $out/tmp/$out\_to_FlankingRead.paf
+
+cat $out/tmp/$out\_to_FlankingRead.paf | sort -k6,6 -k1,1 -k3,3n -k4,4n > $out/tmp/$out\_to_FlankingRead.sorted.paf
+cat $out/tmp/$out\_to_FlankingRead.sorted.paf | awk -F'\t' '{print $6"\t"$0}' > $out/tmp/$out\_to_FlankingRead.sorted.paf.with_id.tmp
 
 echo -n > $out/tmp/$out\_to_FlankingRead_overhang10.paf
 cat $out/$out\_100bp_NCL_flanking.length  | while read one
 do 
    oneEvent=$(echo $one | awk '{print $1}')
    OneSideLength=$(echo $one | awk '{print $2}')
-   cat $out/tmp/$out\_to_FlankingRead.paf | grep $oneEvent | awk '($9 -len > 10) && (len - $8 >10)' len=$OneSideLength >> $out/tmp/$out\_to_FlankingRead_overhang10.paf
+   join -t$'\t' $out/tmp/$out\_to_FlankingRead.sorted.paf.with_id.tmp <(echo $oneEvent) | cut -f'2-' | awk '($9 -len > 10) && (len - $8 >10)' len=$OneSideLength >> $out/tmp/$out\_to_FlankingRead_overhang10.paf
 done 
 
-cat $out/tmp/$out\_to_FlankingRead_overhang10.paf | awk '$11/$7 > 0.8 && $11/$10 < 2 && $12 == 60 {print $6}'| sort | uniq  > $out/tmp/$out\_to_FlankingRead_80.list
-cat $out/tmp/$out\_to_FlankingRead_overhang10.paf | awk '$11/$7 > 0.8 && $11/$10 < 2 && $12 == 60 {print $0}'| sort | uniq  > $out/tmp/$out\_to_FlankingRead_80.paf
+cat $out/tmp/$out\_to_FlankingRead_overhang10.paf | awk '$11/$7 > 0.8 && $11/$10 < 2 && $12 == 60' > $out/tmp/$out\_to_FlankingRead_80.paf
+cat $out/tmp/$out\_to_FlankingRead_80.paf | cut -f '6' | sort | uniq  > $out/tmp/$out\_to_FlankingRead_80.list
 
+cat $out/tmp/$out\_to_FlankingRead_80.paf | awk -F'\t' '{print $6"\t"$0}' > $out/tmp/$out\_to_FlankingRead_80.paf.with_id.tmp
 
 echo -n > $out/tmp/All.list
 echo -n > $out/tmp/split.bed
 cat $out/tmp/$out\_to_FlankingRead_80.list | while read one
 do 
-   cat $out/tmp/$out\_to_FlankingRead_80.paf | grep $one | awk '{print $1}' | sort | uniq > $out/tmp/$one.list 
-   cat $out/tmp/$out\_to_FlankingRead_80.paf | grep $one | awk '{print $1 "\t" $2 "\t" $3 "\t" $4}' | awk '{print $0 "\t" int(($4-$3+1)/2)}' | awk '{print $0 "\t" $3+$5}' | awk '{print $1 "\t" 0 "\t" $6 "\n" $1 "\t" $6 "\t" $2}' > $out/tmp/$one.split.bed
+   join -t$'\t' $out/tmp/$out\_to_FlankingRead_80.paf.with_id.tmp <(echo $one) > $out/tmp/$one.paf
+   cat $out/tmp/$one.paf | awk '{print $1}' | sort | uniq > $out/tmp/$one.list 
+   cat $out/tmp/$one.paf | awk '{print $1 "\t" $2 "\t" $3 "\t" $4}' | awk '{print $0 "\t" int(($4-$3+1)/2)}' | awk '{print $0 "\t" $3+$5}' | awk '{print $1 "\t" 0 "\t" $6 "\n" $1 "\t" $6 "\t" $2}' > $out/tmp/$one.split.bed
    cat $out/tmp/$one.list >> $out/tmp/All.list
    cat $out/tmp/$one.split.bed >> $out/tmp/split.bed
 done
@@ -95,16 +104,24 @@ $seqtk_link subseq $longread $out/tmp/All.list > $out/tmp/All.fa
 $seqtk_link subseq $out/tmp/All.fa $out/tmp/split.bed > $out/tmp/All_split.fa
 
 echo "Step: to align splited reads against whole genome"
-#$minimap2_link -d $genome_prefix.mmi $genome_prefix.fa
-$minimap2_link -t 10 -ax splice $genome_prefix.fa $out/tmp/All_split.fa | $samtools_link view -bS - > $out/tmp/All.bam
-$bedtools_link bamtobed -bed12 -i $out/tmp/All.bam | awk '$1~/^chr[0-9XY]/'| awk '$5>0'| sort -k4 > $out/tmp/All.bed12
-cat $out/tmp/All.bed12 | awk '{print $4}' | uniq -c | awk '$1==1 {print $2}'  > $out/tmp/All.bed12.uniq.list
-cat $out/tmp/All.bed12 | grep -f $out/tmp/All.bed12.uniq.list > $out/tmp/All.uniq.bed12 
+$minimap2_link -d $genome_prefix.mmi $genome_prefix.fa
+$minimap2_link -t 10 -ax splice $genome_prefix.mmi $out/tmp/All_split.fa | $samtools_link view -bS - > $out/tmp/All.bam
+
+$bedtools_link bamtobed -bed12 -i $out/tmp/All.bam | awk '$1~/^chr[0-9XY]/'| awk '$5>0'| sort -k4,4 > $out/tmp/All.bed12
+
+cat $out/tmp/All.bed12 | awk -F'\t' '{print $4"\t"$0}' | sort -k1,1 > $out/tmp/All.bed12.sorted
+cat $out/tmp/All.bed12.sorted | cut -f'1' | uniq -c | awk '$1==1 {print $2}'  > $out/tmp/All.bed12.uniq.list
+join -t$'\t' $out/tmp/All.bed12.sorted $out/tmp/All.bed12.uniq.list | cut -f'2-' > $out/tmp/All.uniq.bed12
+
 
 echo "Step: to diagnose split reads mapped to donor and acceptor: uniquely mapping and same chromsome"
-cat $out/tmp/$out\_to_FlankingRead_80.list | while read one
+
+cat $out/tmp/All.uniq.bed12 | awk -F'\t' '{print $4"\t"$0}' | awk 'BEGIN{FS="\t";OFS="\t"}{sub(/:.*/, "", $1); print $0}' | sort -k1,1 -k5,5 > $out/tmp/All.uniq.read_ID.bed12
+
+cat $out/tmp/$proj\_to_FlankingRead_80.list | while read one
 do 
-   cat $out/tmp/All.uniq.bed12 | grep -f $out/tmp/$one.list > $out/tmp/$one\.bed12
+   join -t$'\t' $out/tmp/All.uniq.read_ID.bed12 $out/tmp/$one.list | cut -f '2-' > $out/tmp/$one.bed12
+
    chr_donor=$(echo $one | sed 's/:/\t/g' | awk '{print $1}')  
    chr_acceptor=$(echo $one | sed 's/:/\t/g' | awk '{print $4}')
 
@@ -133,19 +150,22 @@ cat $out/tmp/pass1_intra.list | while read one
 do
    chr=$(echo $one | sed 's/:/\t/g' | awk '{print $1}')  
    cp $out/pass1/$one.bed12  $out/pass2_intra/$one.bed12.tmp
-   cat $out/pass2_intra/$one.bed12.tmp | awk '$5>=60' | awk '$1==chr' chr=$chr | awk '{print $4}' | sed 's/:/\t/g' | grep '1-' | sort | uniq | awk '{split($2,a,"-"); print $1":"a[2]+1 "\t" $2}' | sort -k1 > piece1.tmp1
-   cat $out/pass2_intra/$one.bed12.tmp | awk '$5>=60' | awk '$1==chr' chr=$chr | awk '{print $4}' | sed 's/:/\t/g' | grep -v '1-' | sort | uniq | awk '{split($2,a,"-"); print $1":"a[1] "\t" $2}' | sort -k1 > piece2.tmp1
-   join piece1.tmp1 piece2.tmp1 | tr ' ' \\t  > piece12.tmp1
-   cat piece12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$3}' > piece1.tmp2 
-   cat piece12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$4}' > piece2.tmp2
-   cat piece1.tmp2 piece2.tmp2 | sort -k1 > long.tmp1
-   join $out/pass2_intra/$one.bed12.tmp long.tmp1 -1 4 -2 1  | tr ' ' \\t | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > long.tmp2
    
-   count_long=$(cat long.tmp2 | wc -l)
+   cat $out/pass2_intra/$one.bed12.tmp | awk '$5>=60' | cut -f '4' | sed 's/[:-]/\t/g' > $out/pieces.tmp
+   cat $out/pieces.tmp | awk -F'\t' '$2==1{print $1":"$3+1"\t"$2"-"$3}' | sort -k1,1 > $out/pieces1.tmp1
+   cat $out/pieces.tmp | awk -F'\t' '$2!=1{print $1":"$2"\t"$2"-"$3}' | sort -k1,1 > $out/pieces2.tmp1
+   join -t$'\t' $out/pieces1.tmp1 $out/pieces2.tmp1 > $out/pieces12.tmp1
+
+   cat $out/pieces12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$3}' > $out/pieces1.tmp2
+   cat $out/pieces12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$4}' > $out/pieces2.tmp2
+   cat $out/pieces1.tmp2 $out/pieces2.tmp2 | sort > $out/long.tmp1
+   join -t$'\t' $out/pass2_intra/$one.bed12.tmp $out/long.tmp1 -1 4 -2 1 | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp2
+   
+   count_long=$(cat $out/long.tmp2 | wc -l)
 
    if [[ "$count_long" -gt 0 ]]; then
   
-      cat long.tmp2 | awk '$5==60' > $out/pass2_intra/$one.bed12
+      cat $out/long.tmp2 | awk '$5==60' > $out/pass2_intra/$one.bed12
    fi
 
    rm -r -f $out/pass2_intra/$one.bed12.tmp
@@ -172,34 +192,41 @@ $NCLsl_bin/BrowserView.sh -input_folder $out/pass2_intra
 cat $out/tmp/pass1_inter.list | while read one
 do
    cp $out/pass1/$one.bed12 $out/pass2_inter/$one.bed12.tmp
-   cat $out/pass2_inter/$one.bed12.tmp | awk '$5==60' | awk '{print $4}' | sed 's/:/\t/g' | grep '1-' | sort | uniq | awk '{split($2,a,"-"); print $1":"a[2]+1 "\t" $2}' | sort -k1 > piece1.tmp1
-   cat $out/pass2_inter/$one.bed12.tmp | awk '$5==60' | awk '{print $4}' | sed 's/:/\t/g' | grep -v '1-' | sort | uniq | awk '{split($2,a,"-"); print $1":"a[1] "\t" $2}' | sort -k1 > piece2.tmp1
-   join piece1.tmp1 piece2.tmp1 | tr ' ' \\t  > piece12.tmp1
-   cat piece12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$3}' > piece1.tmp2 
-   cat piece12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$4}' > piece2.tmp2
-   cat piece1.tmp2 piece2.tmp2 | sort -k1 > long.tmp1
-   join $out/pass2_inter/$one.bed12.tmp long.tmp1 -1 4 -2 1  | tr ' ' \\t | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > long.tmp2
-   count_long=$(cat long.tmp2 | wc -l)
+
+   cat $out/pass2_inter/$one.bed12.tmp | awk '$5==60' | cut -f '4' | sed 's/[:-]/\t/g' > $out/pieces.tmp
+   cat $out/pieces.tmp | awk -F'\t' '$2==1{print $1":"$3+1"\t"$2"-"$3}' | sort -k1,1 > $out/pieces1.tmp1
+   cat $out/pieces.tmp | awk -F'\t' '$2!=1{print $1":"$2"\t"$2"-"$3}' | sort -k1,1 > $out/pieces2.tmp1
+   join -t$'\t' $out/pieces1.tmp1 $out/pieces2.tmp1 > $out/pieces12.tmp1
+
+   cat $out/pieces12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$3}' > $out/pieces1.tmp2
+   cat $out/pieces12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$4}' > $out/pieces2.tmp2
+   cat $out/pieces1.tmp2 $out/pieces2.tmp2 | sort > $out/long.tmp1
+   join -t$'\t' $out/pass2_inter/$one.bed12.tmp $out/long.tmp1 -1 4 -2 1 | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp2
+
+   count_long=$(cat $out/long.tmp2 | wc -l)
 
    if [[ "$count_long" -gt 0 ]]; then
-   
-      cat long.tmp2 | awk '$5>=60' > $out/pass2_inter/$one.bed12
+  
+      cat $out/long.tmp2 | awk '$5>=60' > $out/pass2_intra/$one.bed12
    fi
 
-   rm -r -f $out/pass2_inter/$one.bed12.tmp
+   rm -r -f $out/pass2_intra/$one.bed12.tmp
 
 done
 
 ##inter_view##
 $NCLsl_bin/BrowserView.sh -input_folder $out/pass2_inter
 
-rm -r -f piece1.tmp1
-rm -r -f piece2.tmp1
-rm -r -f piece1.tmp2
-rm -r -f piece2.tmp2
-rm -r -f piece12.tmp1
-rm -r -f long.tmp1
-rm -r -f long.tmp2
+rm -rf \
+   $out/pieces.tmp \
+   $out/piece1.tmp1 \
+   $out/piece2.tmp1 \
+   $out/piece1.tmp2 \
+   $out/piece2.tmp2 \
+   $out/piece12.tmp1 \
+   $out/long.tmp1 \
+   $out/long.tmp2
+
 
 echo "Step: output intra result"
 ls $out/pass2_intra > $out/tmp/pass2_intra.list

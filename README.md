@@ -23,7 +23,7 @@ NCLscan-hybird.sh \
     -long_type [pb or ont] \
     -nclscan [NCLscan result file] \
     -c [configure file] \
-    -o [output_prefix]
+    -o [out_prefix_name]
 ```
 
 

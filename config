@@ -1,0 +1,6 @@
+NCLsl_bin=[/path/to/NCLscan-hybird]/bin
+genome_prefix=[prefix for the genome file]
+bedtools_link=[/path/to/bedtools]
+minimap2_link=[/path/to/minimap2]
+seqtk_link=[/path/to/seqtk]
+samtools_link=[/path/to/samtools]

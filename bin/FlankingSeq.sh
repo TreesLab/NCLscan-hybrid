@@ -63,7 +63,7 @@ if [[ -z "$output" ]]; then
 fi
 
 tmp_dir=$output"_tmp"
-mkdir -p tmp_dir
+mkdir -p $tmp_dir
 
 echo "flanking length: "$FlankLen
 flanklen=$(echo $FlankLen | awk '{print $1}')

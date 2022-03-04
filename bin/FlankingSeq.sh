@@ -5,7 +5,7 @@ key="$1"
 
 case $key in
      -nclscan) 
-     NCLresult=$(readlink -f $2)
+     NCLresult=$2
      shift
      ;; 
      -fl)
@@ -13,19 +13,19 @@ case $key in
      shift
      ;;
      -g|--genome)
-     genome=$(readlink -f $2)
+     genome=$2
      shift
      ;;
      -gtf)
-     gtf=$(readlink -f $2)
+     gtf=$2
      shift
      ;;
      -bedtools)
-     bedtoolslink=$(readlink -f $2)
+     bedtoolslink=$2
      shift
      ;;
      -mps)
-     mpslink=$(readlink -f $2)
+     mpslink=$2
      shift
      ;;
      -o) 

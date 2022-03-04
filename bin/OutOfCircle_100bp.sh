@@ -6,7 +6,7 @@ key="$1"
 
 case $key in
      -input_folder) 
-     input=$(readlink -f $2)
+     input=$2
      shift
      ;;  
      -o | --output)

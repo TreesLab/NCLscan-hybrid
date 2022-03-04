@@ -6,7 +6,7 @@ key="$1"
 
 case $key in 
      -long | --longread)
-     longread=$(readlink -f $2)
+     longread=$2
      shift
      ;;
      -long_type | --longread_type)
@@ -14,11 +14,11 @@ case $key in
      shift
      ;;
      -nclscan | --NCLscan)
-     NCLscan=$(readlink -f $2)
+     NCLscan=$2
      shift
      ;;
      -c | --config)
-     config=$(readlink -f $2)
+     config=$2
      shift
      ;;
      -o | --output)
@@ -34,7 +34,7 @@ done
 if [[ -z "$longread" ]]; then
    echo ""
    echo "Usage:"
-   echo "./NCLsl.sh -long [input long read fasta file] -long_type [pb or ont] -nclscan [NCLscan result file] -c [configure file link] -o [output_prefix]"
+   echo "./NCLscan-hybird.sh -long [input long read fasta file] -long_type [pb or ont] -nclscan [NCLscan result file] -c [configure file link] -o [output_prefix]"
    echo ""
    exit
 fi
@@ -66,7 +66,7 @@ echo "Step: to create flankingSeqs of NCL events"
 $NCLsl_bin/FlankingSeq.sh -nclscan $NCLscan -fl 100 -gtf $gtf -g $genome_prefix.fa -bedtools $bedtools_link  -mps $NCLsl_bin/merge_paired_sequences.py -o $out/$out\_100bp
 
 echo "Step: to align long reads against flankingSeqs"
-$minimap2_link -d $out/$out\_100bp_flanking_merged.mmi $out/$out\_100bp_flanking_merged.fa   
+#$minimap2_link -d $out/$out\_100bp_flanking_merged.mmi $out/$out\_100bp_flanking_merged.fa   
 $minimap2_link -t 10 -x map-$long_type $out/$out\_100bp_flanking_merged.fa $longread > $out/tmp/$out\_to_FlankingRead.paf
 
 echo -n > $out/tmp/$out\_to_FlankingRead_overhang10.paf

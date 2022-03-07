@@ -93,7 +93,7 @@ echo -n > $out/tmp/All.list
 echo -n > $out/tmp/split.bed
 cat $out/tmp/$out\_to_FlankingRead_80.list | while read one
 do 
-   join -t$'\t' $out/tmp/$out\_to_FlankingRead_80.paf.with_id.tmp <(echo $one) > $out/tmp/$one.paf
+   join -t$'\t' $out/tmp/$out\_to_FlankingRead_80.paf.with_id.tmp <(echo $one) | cut -f '2-' > $out/tmp/$one.paf
    cat $out/tmp/$one.paf | awk '{print $1}' | sort | uniq > $out/tmp/$one.list 
    cat $out/tmp/$one.paf | awk '{print $1 "\t" $2 "\t" $3 "\t" $4}' | awk '{print $0 "\t" int(($4-$3+1)/2)}' | awk '{print $0 "\t" $3+$5}' | awk '{print $1 "\t" 0 "\t" $6 "\n" $1 "\t" $6 "\t" $2}' > $out/tmp/$one.split.bed
    cat $out/tmp/$one.list >> $out/tmp/All.list

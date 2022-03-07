@@ -118,7 +118,7 @@ echo "Step: to diagnose split reads mapped to donor and acceptor: uniquely mappi
 
 cat $out/tmp/All.uniq.bed12 | awk -F'\t' '{print $4"\t"$0}' | awk 'BEGIN{FS="\t";OFS="\t"}{sub(/:.*/, "", $1); print $0}' | sort -k1,1 -k5,5 > $out/tmp/All.uniq.read_ID.bed12
 
-cat $out/tmp/$proj\_to_FlankingRead_80.list | while read one
+cat $out/tmp/$out\_to_FlankingRead_80.list | while read one
 do 
    join -t$'\t' $out/tmp/All.uniq.read_ID.bed12 $out/tmp/$one.list | cut -f '2-' > $out/tmp/$one.bed12
 

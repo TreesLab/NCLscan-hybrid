@@ -229,6 +229,9 @@ rm -rf \
 
 
 echo "Step: output intra result"
+
+echo -n > $out/tmp/NCL_long_intra.tmp1
+
 ls $out/pass2_intra > $out/tmp/pass2_intra.list
 cat $out/tmp/pass2_intra.list  | while read one
 do  
@@ -247,6 +250,9 @@ join -o 1.1 1.2 1.3 1.4 2.2 2.3 $out/tmp/NCL_long_intra.tmp7 $out/$out\_WithinCi
 join $out/tmp/NCL_long_intra.OC.WithinCircle $out/tmp/result.tmp | tr ' ' \\t | sort | uniq > $out/$out\_long_intra.result
 
 echo "Step: output inter result"
+
+echo -n > $out/tmp/NCL_long_inter.tmp1
+
 ls $out/pass2_inter > $out/tmp/pass2_inter.list  
 cat $out/tmp/pass2_inter.list | while read one
 do  

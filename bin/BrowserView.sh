@@ -27,16 +27,14 @@ fi
 output=$input"_BrowserView"
 
 mkdir -p $output
-ls $input > input.list
-
-cat input.list | while read one
+ls $input | while read one
 do
   echo -n > $output/$one
   echo $one | sed 's/:/\t/g' | awk '$3=="+" {print "browser position " $1 ":" $5 "-" $2}' >> $output/$one
   echo $one | sed 's/:/\t/g' | awk '$3=="-" {print "browser position " $1 ":" $2 "-" $5}' >> $output/$one
-  cat $input/$one | awk '{print $4}' | sed 's/:/\t/g' | awk '{print $1}' | sort | uniq > read_list.tmp
+  
   initCount=0 
-  cat  read_list.tmp | while read OneRead
+  cat $input/$one | awk '{print $4}' | sed 's/:/\t/g' | awk '{print $1}' | sort | uniq | while read OneRead
     do
       CountRead=$(( 1+$initCount ))
       ColorVar1=$(shuf -i 0-255 -n 1)
@@ -48,6 +46,3 @@ do
     done
    
 done
-
-rm -r -f read_list.tmp
-rm -r -f input.list

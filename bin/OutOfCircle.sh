@@ -6,11 +6,15 @@ key="$1"
 
 case $key in
      -input_folder) 
-     input=$(readlink -f $2)
+     input=$2
      shift
      ;;  
      -o | --output)
      out=$2
+     shift
+     ;;
+     -L)
+     extend_len=$2
      shift
      ;;
      *)
@@ -22,7 +26,7 @@ done
 if [[ -z "$input" ]]; then
    echo ""
    echo "Usage:"
-   echo "./OutOfCircle.sh -input_folder [input folder] -o [output_prefix]"
+   echo "./OutOfCircle.sh -input_folder [input folder] -o [output_prefix] -L [extend_len]"
    echo ""
    exit
 fi
@@ -31,9 +35,13 @@ fi
 if [[ -z "$out" ]]; then
    echo ""
    echo "Usage:"
-   echo "./OutOfCircle.sh -input_folder [input folder] -o [output_prefix]"
+   echo "./OutOfCircle.sh -input_folder [input folder] -o [output_prefix] -L [extend_len]"
    echo ""
    exit
+fi
+
+if [[ -z "$extend_len" ]]; then
+   extend_len=100
 fi
 
 
@@ -46,8 +54,8 @@ do
    intra_chr=$(echo $one | sed 's/:/\t/g' | awk '{print $1}')
    intra_donor=$(echo $one | sed 's/:/\t/g' | awk '{print $2}')
    intra_acceptor=$(echo $one | sed 's/:/\t/g' | awk '{print $5}')
-   upstream_pos=$(echo $intra_donor $intra_acceptor | tr ' ' \\n | sort | head -n 1 | awk '{print $1-100}')
-   downstream_pos=$(echo $intra_donor $intra_acceptor | tr ' ' \\n | sort | tail -n 1 | awk '{print $1+100}')
+   upstream_pos=$(echo $intra_donor $intra_acceptor | tr ' ' \\n | sort | head -n 1 | awk '{print $1-L}' L=$extend_len)
+   downstream_pos=$(echo $intra_donor $intra_acceptor | tr ' ' \\n | sort | tail -n 1 | awk '{print $1+L}' L=$extend_len)
    long_list=$(cat $input/$one | awk '{print $4}' | sed 's/:/\t/g' | awk '{print $1}' | sort  | uniq)
    num_long=$(echo $long_list | wc -l)
    

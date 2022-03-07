@@ -173,7 +173,7 @@ done
 
 echo "Step: to check_intra_OutOfCircle"
 ## Out of circle: long read extends more than 100 bp on one side (upstream or downstream)  
-$NCLsl_bin/OutOfCircle_100bp.sh -input_folder $out/pass2_intra -o $out/$out
+$NCLsl_bin/OutOfCircle.sh -input_folder $out/pass2_intra -o $out/$out -L 100
 
 echo  "Step: to check_intra_WithinCircle"
 ## Within Circle : obtain more than one pseudo-reference (200 bp NCL sequence) 

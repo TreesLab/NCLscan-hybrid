@@ -58,13 +58,15 @@ do
    downstream_pos=$(echo $intra_donor $intra_acceptor | tr ' ' \\n | sort | tail -n 1 | awk '{print $1+L}' L=$extend_len)
    long_list=$(cat $input/$one | awk '{print $4}' | sed 's/:/\t/g' | awk '{print $1}' | sort  | uniq)
    num_long=$(echo $long_list | wc -l)
+
+   cat $input/$one | awk -F'\t' '{print $4"\t"$0}' | awk 'BEGIN{FS="\t";OFS="\t"}{sub(/:.*/, "", $1); print $0}' | sort -k1,1 > $out\_one.sorted.tmp
    
    OC=0
    countOC=0
    echo $long_list | while read oneLong 
    do
-      upstream_OneLongRead=$(cat $input/$one | grep -P $oneLong | awk '$1==chr' chr=$intra_chr | awk '{print $2 " " $3}' | tr ' ' \\n | sort | head -n 1)
-      downstream_OneLongRead=$(cat $input/$one | grep -P $oneLong | awk '$1==chr' chr=$intra_chr | awk '{print $2 " " $3}' | tr ' ' \\n | sort | tail -n 1)
+      upstream_OneLongRead=$(join -t$'\t' $out\_one.sorted.tmp <(echo $oneLong) | cut -f '2-' | awk '$1==chr' chr=$intra_chr | awk '{print $2 " " $3}' | tr ' ' \\n | sort | head -n 1)
+      downstream_OneLongRead=$(join -t$'\t' $out\_one.sorted.tmp <(echo $oneLong) | cut -f '2-' | awk '$1==chr' chr=$intra_chr | awk '{print $2 " " $3}' | tr ' ' \\n | sort | tail -n 1)
      
       if [[ $upstream_OneLongRead < $upstream_pos ]] || [[ $downstream_OneLongRead > $downstream_pos ]]
         then OC=1  countOC=$(( $countOC + 1 ))

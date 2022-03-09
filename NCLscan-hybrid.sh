@@ -34,7 +34,7 @@ done
 if [[ -z "$longread" ]]; then
    echo ""
    echo "Usage:"
-   echo "./NCLscan-hybird.sh -long [input long read fasta file] -long_type [pb or ont] -nclscan [NCLscan result file] -c [configure file link] -o [output_prefix]"
+   echo "./NCLscan-hybrid.sh -long [input long read fasta file] -long_type [pb or ont] -nclscan [NCLscan result file] -c [configure file link] -o [output_prefix]"
    echo ""
    exit
 fi
@@ -60,13 +60,13 @@ echo -n > $out/$out\_long_inter.result
 
 echo "Step: to create flankingSeqs of NCL events" 
 
-$NCLsl_bin/FlankingSeq.sh \
+$NCLscan_hybrid_bin/FlankingSeq.sh \
    -nclscan $NCLscan \
    -fl 100 \
    -gtf $gtf \
    -g $genome_prefix.fa \
    -bedtools $bedtools_link  \
-   -mps $NCLsl_bin/merge_paired_sequences.py \
+   -mps $NCLscan_hybrid_bin/merge_paired_sequences.py \
    -o $out/$out\_100bp
 
 echo "Step: to align long reads against flankingSeqs"
@@ -173,19 +173,19 @@ done
 
 echo "Step: to check_intra_OutOfCircle"
 ## Out of circle: long read extends more than 100 bp on one side (upstream or downstream)  
-$NCLsl_bin/OutOfCircle.sh -input_folder $out/pass2_intra -o $out/$out -L 100
+$NCLscan_hybrid_bin/OutOfCircle.sh -input_folder $out/pass2_intra -o $out/$out -L 100
 
 echo  "Step: to check_intra_WithinCircle"
 ## Within Circle : obtain more than one pseudo-reference (200 bp NCL sequence) 
-$NCLsl_bin/WithinCircle.sh -input_folder $out/tmp/$out\_to_FlankingRead_80.paf -c $config -o $out
+$NCLscan_hybrid_bin/WithinCircle.sh -input_folder $out/tmp/$out\_to_FlankingRead_80.paf -c $config -o $out
 ##Within circle _view##
-$NCLsl_bin/BrowserView.sh -input_folder $out/WithinCircle_events
+$NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/WithinCircle_events
 
 
 
 
 ##intra_view##
-$NCLsl_bin/BrowserView.sh -input_folder $out/pass2_intra
+$NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/pass2_intra
 
 
 ## inter ##
@@ -215,7 +215,7 @@ do
 done
 
 ##inter_view##
-$NCLsl_bin/BrowserView.sh -input_folder $out/pass2_inter
+$NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/pass2_inter
 
 rm -rf \
    $out/pieces.tmp \

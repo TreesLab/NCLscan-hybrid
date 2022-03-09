@@ -1,4 +1,4 @@
-## Manual of NCLscan-hybird
+## Manual of NCLscan-hybrid
 ####   Version: 1.0.0
 #### NCLscan-hybird, a tool using long-read sequencing (Pabio/Nanopore) to validate non-col-linear (NCL) transcripts (fusion, trans-splicing, and circular RNA) 
 -----------------------------
@@ -18,7 +18,7 @@ recommand to use conda to install the dependencies.
 ### Usage
 
 ```bash
-NCLscan-hybird.sh \
+NCLscan-hybrid.sh \
     -long [input long read fasta/fastq file] \
     -long_type [pb or ont] \
     -nclscan [NCLscan result file] \

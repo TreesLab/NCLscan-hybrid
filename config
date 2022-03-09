@@ -1,4 +1,4 @@
-NCLsl_bin=[/path/to/NCLscan-hybird]/bin
+NCLscan_hybrid_bin=[/path/to/NCLscan-hybrid]/bin
 genome_prefix=[prefix for the genome file]
 gtf=[/path/to/annotation.gtf]
 bedtools_link=[/path/to/bedtools]

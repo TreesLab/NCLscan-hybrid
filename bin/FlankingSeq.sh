@@ -91,7 +91,7 @@ $mpslink $tmp_dir/NCL_flank_exnic.fa  $output\_flanking_merged.fa
 
 cat $tmp_dir/NCL_flank.1_exonic.bed | awk '{print $4 "\t" $3-$2}' | sed 's/\.1//g' | tr ' ' \\t | sort -k1,1 > $tmp_dir/NCL_flank.1_exonic.length
 cat $tmp_dir/NCL_flank.2_exonic.bed | awk '{print $4 "\t" $3-$2}' | sed 's/\.2//g' | tr ' ' \\t | sort -k1,1 > $tmp_dir/NCL_flank.2_exonic.length
-join $tmp_dir/NCL_flank.1_exonic.length $tmp_dir/NCL_flank.2_exonic.length > $output\_NCL_flanking.length
+join -t$'\t' $tmp_dir/NCL_flank.1_exonic.length $tmp_dir/NCL_flank.2_exonic.length > $output\_NCL_flanking.length
 
 
 echo "Output:" $output"_flanking_merged.fa;" $output"_NCL_flanking.length"

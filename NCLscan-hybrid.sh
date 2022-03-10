@@ -71,23 +71,22 @@ $NCLscan_hybrid_bin/FlankingSeq.sh \
 
 echo "Step: to align long reads against flankingSeqs"
 # $minimap2_link -d $out/$out\_100bp_flanking_merged.mmi $out/$out\_100bp_flanking_merged.fa   
-$minimap2_link -t 10 -x map-$long_type $out/$out\_100bp_flanking_merged.fa $longread > $out/tmp/$out\_to_FlankingRead.paf
+$minimap2_link -t 10 -x map-$long_type $out/$out\_100bp_flanking_merged.fa $longread -c > $out/tmp/$out\_to_FlankingRead.paf
 
 cat $out/tmp/$out\_to_FlankingRead.paf | sort -k6,6 -k1,1 -k3,3n -k4,4n > $out/tmp/$out\_to_FlankingRead.sorted.paf
 cat $out/tmp/$out\_to_FlankingRead.sorted.paf | awk -F'\t' '{print $6"\t"$0}' > $out/tmp/$out\_to_FlankingRead.sorted.paf.with_id.tmp
+join -t$'\t' $out/tmp/$out\_to_FlankingRead.sorted.paf.with_id.tmp $out/$out\_100bp_NCL_flanking.length | awk -F'\t' '($10 - $(NF-1) > 10) && ($(NF-1) - $9 > 10)' | awk 'BEGIN{FS=OFS="\t"}{NF-=1; print $0}' | cut -f '2-' > $out/tmp/$out\_to_FlankingRead_overhang10.paf
 
-echo -n > $out/tmp/$out\_to_FlankingRead_overhang10.paf
-cat $out/$out\_100bp_NCL_flanking.length  | while read one
-do 
-   oneEvent=$(echo $one | awk '{print $1}')
-   OneSideLength=$(echo $one | awk '{print $2}')
-   join -t$'\t' $out/tmp/$out\_to_FlankingRead.sorted.paf.with_id.tmp <(echo $oneEvent) | cut -f'2-' | awk '($9 -len > 10) && (len - $8 >10)' len=$OneSideLength >> $out/tmp/$out\_to_FlankingRead_overhang10.paf
-done 
-
-cat $out/tmp/$out\_to_FlankingRead_overhang10.paf | awk '$11/$7 > 0.8 && $11/$10 < 2 && $12 == 60' > $out/tmp/$out\_to_FlankingRead_80.paf
+cat $out/tmp/$out\_to_FlankingRead_overhang10.paf | awk -F'\t' '$11/$7 > 0.8 && $11/$10 < 2 && $12 == 60' > $out/tmp/$out\_to_FlankingRead_80.paf
 cat $out/tmp/$out\_to_FlankingRead_80.paf | cut -f '6' | sort | uniq  > $out/tmp/$out\_to_FlankingRead_80.list
 
-cat $out/tmp/$out\_to_FlankingRead_80.paf | awk -F'\t' '{print $6"\t"$0}' > $out/tmp/$out\_to_FlankingRead_80.paf.with_id.tmp
+cat $out/tmp/$out\_to_FlankingRead_80.paf | awk -F'\t' '{print $0"\t"$(NF)-$8}' | awk -F'\t' '{print $(NF-2)"\t"$NF}' | sed 's/^cg:Z://g' | $NCLscan_hybrid_bin/get_qpos.py -f - > $out/tmp/$out\_to_FlankingRead_80.paf.qpos
+paste $out/tmp/$out\_to_FlankingRead_80.paf $out/tmp/$out\_to_FlankingRead_80.paf.qpos | awk -F'\t' '($5=="+"){print $0"\t"$3+$NF}($5=="-"){print $0"\t"$4-$NF}' > $out/tmp/$out\_to_FlankingRead_80.junction.paf
+
+
+# ----- Out of Circle: start ----- #
+
+cat $out/tmp/$out\_to_FlankingRead_80.junction.paf | awk -F'\t' '{print $6"\t"$0}' > $out/tmp/$out\_to_FlankingRead_80.paf.with_id.tmp
 
 echo -n > $out/tmp/All.list
 echo -n > $out/tmp/split.bed
@@ -95,7 +94,9 @@ cat $out/tmp/$out\_to_FlankingRead_80.list | while read one
 do 
    join -t$'\t' $out/tmp/$out\_to_FlankingRead_80.paf.with_id.tmp <(echo $one) | cut -f '2-' > $out/tmp/$one.paf
    cat $out/tmp/$one.paf | awk '{print $1}' | sort | uniq > $out/tmp/$one.list 
-   cat $out/tmp/$one.paf | awk '{print $1 "\t" $2 "\t" $3 "\t" $4}' | awk '{print $0 "\t" int(($4-$3+1)/2)}' | awk '{print $0 "\t" $3+$5}' | awk '{print $1 "\t" 0 "\t" $6 "\n" $1 "\t" $6 "\t" $2}' > $out/tmp/$one.split.bed
+
+   cat $out/tmp/$one.paf | awk -F'\t' '{print $1"\t"0"\t"$NF"\n"$1"\t"$NF"\t"$2}' > $out/tmp/$one.split.bed
+
    cat $out/tmp/$one.list >> $out/tmp/All.list
    cat $out/tmp/$one.split.bed >> $out/tmp/split.bed
 done
@@ -175,9 +176,12 @@ echo "Step: to check_intra_OutOfCircle"
 ## Out of circle: long read extends more than 100 bp on one side (upstream or downstream)  
 $NCLscan_hybrid_bin/OutOfCircle.sh -input_folder $out/pass2_intra -o $out/$out -L 100
 
+# ----- Out of Circle: end ----- #
+
+
 echo  "Step: to check_intra_WithinCircle"
 ## Within Circle : obtain more than one pseudo-reference (200 bp NCL sequence) 
-$NCLscan_hybrid_bin/WithinCircle.sh -input_folder $out/tmp/$out\_to_FlankingRead_80.paf -c $config -o $out
+$NCLscan_hybrid_bin/WithinCircle.sh -input_folder $out/tmp/$out\_to_FlankingRead_80.junction.paf -c $config -o $out
 ##Within circle _view##
 $NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/WithinCircle_events
 

@@ -82,24 +82,24 @@ do
        intraMax=$(echo $intraDonor"\n"$intraAcceptor | sort -r | head -n 1)
        intraMin=$(echo $intraDonor"\n"$intraAcceptor | sort | head -n 1)
 
-       join -t$'\t' $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf <(echo $ReadOne) | awk '{print $1 "\t" $2 "\t" $3 "\t" $4}' | sort -nk3 | awk '{print $0 "\t" int(($4-$3+1)/2)}' | awk '{print $0 "\t" $3+$5}' > $out/WithinCircle_tmp/$CircOne.split.tmp1
+       join -t$'\t' $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf <(echo $ReadOne) | awk -F'\t' '{print $1"\t"$2"\t"$NF}' | sort -k3,3n > $out/WithinCircle_tmp/$CircOne.split.tmp1
 
        fragmentNum=$(cat $out/WithinCircle_tmp/$CircOne.split.tmp1 | wc -l)
-       echo -n > $out/WithinCircle_tmp/$CircOne.split.bed    
+       echo -n > $out/WithinCircle_tmp/$CircOne.split.bed
      
        #fragmentNum=1
-       cat $out/WithinCircle_tmp/$CircOne.split.tmp1 | head -n 1 | awk '{print $1 "\t" 0 "\t" $6}' >> $out/WithinCircle_tmp/$CircOne.split.bed
+       cat $out/WithinCircle_tmp/$CircOne.split.tmp1 | head -n 1 | awk '{print $1 "\t" 0 "\t" $3}' >> $out/WithinCircle_tmp/$CircOne.split.bed
      
        #fragmentNum=2~(n-1)
        for fragmentN in $(seq 2 1 $fragmentNum)
        do
            fragmentNminus=$(($fragmentN-1))
-           start_fragment=$(cat $out/WithinCircle_tmp/$CircOne.split.tmp1 | head -n $fragmentNminus | tail -n 1 | awk '{print $6}')
-           cat $out/WithinCircle_tmp/$CircOne.split.tmp1 | head -n $fragmentN | tail -n 1 | awk '{print $1 "\t" sg "\t" $6}' sg=$start_fragment >> $out/WithinCircle_tmp/$CircOne.split.bed
+           start_fragment=$(cat $out/WithinCircle_tmp/$CircOne.split.tmp1 | head -n $fragmentNminus | tail -n 1 | awk '{print $3}')
+           cat $out/WithinCircle_tmp/$CircOne.split.tmp1 | head -n $fragmentN | tail -n 1 | awk '{print $1 "\t" sg "\t" $3}' sg=$start_fragment >> $out/WithinCircle_tmp/$CircOne.split.bed
        done
      
        #fragmentNum=n
-       start_fragment=$(cat $out/WithinCircle_tmp/$CircOne.split.tmp1 | head -n $fragmentNum | tail -n 1 | awk '{print $6}')
+       start_fragment=$(cat $out/WithinCircle_tmp/$CircOne.split.tmp1 | head -n $fragmentNum | tail -n 1 | awk '{print $3}')
        cat $out/WithinCircle_tmp/$CircOne.split.tmp1 | head -n $fragmentNum | tail -n 1 | awk '{print $1 "\t" sg "\t" $2}' sg=$start_fragment >> $out/WithinCircle_tmp/$CircOne.split.bed
 
        cat $out/WithinCircle_tmp/$CircOne.split.bed >> $out/WithinCircle_tmp/circ.split.bed
@@ -110,7 +110,7 @@ $seqtk_link subseq $out/tmp/All.fa $out/WithinCircle_tmp/circ.split.bed > $out/W
 
 echo "Step1: to align split sequences of a long read against whole genome"
 $minimap2_link -t 10 -ax splice $genome_prefix.mmi $out/WithinCircle_tmp/circ.split.fa | $samtools_link view -bS - > $out/WithinCircle_tmp/circ.bam
-$bedtools_link bamtobed -bed12 -i $out/WithinCircle_tmp/circ.bam | awk '$1~/^chr[0-9XY]/'| awk '$5==60'| sort -k4  > $out/WithinCircle_tmp/circ.tmp.bed12
+$bedtools_link bamtobed -bed12 -i $out/WithinCircle_tmp/circ.bam | awk '$1~/^chr[0-9XY]/'| awk '$5==60'| sort -k4,4  > $out/WithinCircle_tmp/circ.tmp.bed12
 
 cat $out/WithinCircle_tmp/circ.tmp.bed12 | awk -F'\t' '{print $4"\t"$0}' | awk 'BEGIN{FS=OFS="\t"}{sub(/:.*/, "", $1); print $0}' | sort -k1,1 > $out/WithinCircle_tmp/circ.tmp.bed12.with_read_id
 

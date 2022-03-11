@@ -71,7 +71,7 @@ $NCLscan_hybrid_bin/FlankingSeq.sh \
 
 echo "Step: to align long reads against flankingSeqs"
 # $minimap2_link -d $out/$out\_100bp_flanking_merged.mmi $out/$out\_100bp_flanking_merged.fa   
-$minimap2_link -t 10 -x map-$long_type $out/$out\_100bp_flanking_merged.fa $longread -c > $out/tmp/$out\_to_FlankingRead.paf
+$minimap2_link -t 10 -x map-$long_type $out/$out\_100bp_flanking_merged.fa $longread -c --secondary=no > $out/tmp/$out\_to_FlankingRead.paf
 
 cat $out/tmp/$out\_to_FlankingRead.paf | sort -k6,6 -k1,1 -k3,3n -k4,4n > $out/tmp/$out\_to_FlankingRead.sorted.paf
 cat $out/tmp/$out\_to_FlankingRead.sorted.paf | awk -F'\t' '{print $6"\t"$0}' > $out/tmp/$out\_to_FlankingRead.sorted.paf.with_id.tmp

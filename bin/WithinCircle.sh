@@ -62,6 +62,8 @@ cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list | awk '{print $1}' | 
 cat $input | sort -k1,1 > $out/WithinCircle_tmp/FlankingRead_80.sorted_by_read_id.paf
 join -t$'\t' $out/WithinCircle_tmp/FlankingRead_80.sorted_by_read_id.paf $out/WithinCircle_tmp/FlankingRead_80_twice_intra.readID > $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf
 
+cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf | cut -f '1' | sort | uniq -c | awk '{print $2"\t"$1}' > $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf.fragmentNum
+
 cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list | awk '{print $3}' | sort  | uniq > $out/WithinCircle_tmp/circ_twice_intra.list
 
 echo -n > $out/WithinCircle_tmp/circ.split.bed
@@ -131,6 +133,8 @@ do
        intraAcceptor=$(echo $one | awk '{print $3}'| sed 's/:/\t/g' | awk '{print $5}')
        intraMax=$(echo $intraDonor"\n"$intraAcceptor | sort -r | head -n 1)
        intraMin=$(echo $intraDonor"\n"$intraAcceptor | sort | head -n 1)
+
+       fragmentNum=$(join -t$'\t' $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf.fragmentNum <(echo $ReadOne) | head -1 | cut -f'2')
 
        join -t$'\t' $out/WithinCircle_tmp/circ.tmp.bed12.with_read_id <(echo $ReadOne) | cut -f '2-' > $out/WithinCircle_tmp/$CircOne.tmp.bed12
 

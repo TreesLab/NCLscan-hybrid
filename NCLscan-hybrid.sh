@@ -28,6 +28,7 @@ case $key in
      -t | --threads)
      threads=$2
      shift
+     ;;
      *)
 
 esac
@@ -217,10 +218,10 @@ do
 
    if [[ "$count_long" -gt 0 ]]; then
   
-      cat $out/long.tmp2 | awk '$5>=60' > $out/pass2_intra/$one.bed12
+      cat $out/long.tmp2 | awk '$5>=60' > $out/pass2_inter/$one.bed12
    fi
 
-   rm -r -f $out/pass2_intra/$one.bed12.tmp
+   rm -r -f $out/pass2_inter/$one.bed12.tmp
 
 done
 

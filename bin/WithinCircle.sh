@@ -20,6 +20,7 @@ case $key in
      -t | --threads)
      threads=$2
      shift
+     ;;
      *)
 
 esac

@@ -1,5 +1,5 @@
 ## Manual of NCLscan-hybrid
-####   Version: 1.0.0
+####   Version: 1.1.0
 #### NCLscan-hybird, a tool using long-read sequencing (Pabio/Nanopore) to validate non-col-linear (NCL) transcripts (fusion, trans-splicing, and circular RNA) 
 -----------------------------
 
@@ -23,7 +23,8 @@ NCLscan-hybrid.sh \
     -long_type [pb or ont] \
     -nclscan [NCLscan result file] \
     -c [configure file] \
-    -o [out_prefix_name]
+    -o [out_prefix_name] \
+    -t [number of threads]
 ```
 
 

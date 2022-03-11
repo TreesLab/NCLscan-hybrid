@@ -25,6 +25,9 @@ case $key in
      out=$2
      shift
      ;;
+     -t | --threads)
+     threads=$2
+     shift
      *)
 
 esac
@@ -34,11 +37,14 @@ done
 if [[ -z "$longread" ]]; then
    echo ""
    echo "Usage:"
-   echo "./NCLscan-hybrid.sh -long [input long read fasta file] -long_type [pb or ont] -nclscan [NCLscan result file] -c [configure file link] -o [output_prefix]"
+   echo "./NCLscan-hybrid.sh -long [input long read fasta file] -long_type [pb or ont] -nclscan [NCLscan result file] -c [configure file link] -o [output_prefix] -t [num_threads]"
    echo ""
    exit
 fi
 
+if [[ -z "$threads" ]]; then
+   threads=1
+fi
 
 source $config
 # BASEDIR=$(pwd)
@@ -71,7 +77,7 @@ $NCLscan_hybrid_bin/FlankingSeq.sh \
 
 echo "Step: to align long reads against flankingSeqs"
 # $minimap2_link -d $out/$out\_100bp_flanking_merged.mmi $out/$out\_100bp_flanking_merged.fa   
-$minimap2_link -t 10 -x map-$long_type $out/$out\_100bp_flanking_merged.fa $longread -c --secondary=no > $out/tmp/$out\_to_FlankingRead.paf
+$minimap2_link -t $threads -x map-$long_type $out/$out\_100bp_flanking_merged.fa $longread -c --secondary=no > $out/tmp/$out\_to_FlankingRead.paf
 
 cat $out/tmp/$out\_to_FlankingRead.paf | sort -k6,6 -k1,1 -k3,3n -k4,4n > $out/tmp/$out\_to_FlankingRead.sorted.paf
 cat $out/tmp/$out\_to_FlankingRead.sorted.paf | awk -F'\t' '{print $6"\t"$0}' > $out/tmp/$out\_to_FlankingRead.sorted.paf.with_id.tmp
@@ -106,7 +112,7 @@ $seqtk_link subseq $out/tmp/All.fa $out/tmp/split.bed > $out/tmp/All_split.fa
 
 echo "Step: to align splited reads against whole genome"
 $minimap2_link -d $genome_prefix.mmi $genome_prefix.fa
-$minimap2_link -t 10 -ax splice $genome_prefix.mmi $out/tmp/All_split.fa | $samtools_link view -bS - > $out/tmp/All.bam
+$minimap2_link -t $threads -ax splice $genome_prefix.mmi $out/tmp/All_split.fa | $samtools_link view -bS - > $out/tmp/All.bam
 
 $bedtools_link bamtobed -bed12 -i $out/tmp/All.bam | awk '$1~/^chr[0-9XY]/'| awk '$5>0'| sort -k4,4 > $out/tmp/All.bed12
 

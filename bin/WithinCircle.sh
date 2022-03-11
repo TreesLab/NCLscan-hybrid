@@ -17,6 +17,9 @@ case $key in
      out=$2
      shift
      ;;
+     -t | --threads)
+     threads=$2
+     shift
      *)
 
 esac
@@ -26,7 +29,7 @@ done
 if [[ -z "$input" ]]; then
    echo ""
    echo "Usage:"
-   echo "./WithinCircle.sh -input_folder [input folder] -c [configure file link] -o [output_prefix]"
+   echo "./WithinCircle.sh -input_folder [input folder] -c [configure file link] -o [output_prefix] -t [num_threads]"
    echo ""
    exit
 fi
@@ -35,9 +38,13 @@ fi
 if [[ -z "$out" ]]; then
    echo ""
    echo "Usage:"
-   echo "./WithinCircle.sh -input_folder [input folder] -c [configure file link] -o [output_prefix]"
+   echo "./WithinCircle.sh -input_folder [input folder] -c [configure file link] -o [output_prefix] -t [num_threads]"
    echo ""
    exit
+fi
+
+if [[ -z "$threads" ]]; then
+   threads=1
 fi
 
 source $config
@@ -91,7 +98,7 @@ cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf \
 $seqtk_link subseq $out/tmp/All.fa $out/WithinCircle_tmp/circ.split.bed > $out/WithinCircle_tmp/circ.split.fa
 
 echo "Step1: to align split sequences of a long read against whole genome"
-$minimap2_link -t 10 -ax splice $genome_prefix.mmi $out/WithinCircle_tmp/circ.split.fa | $samtools_link view -bS - > $out/WithinCircle_tmp/circ.bam
+$minimap2_link -t $threads -ax splice $genome_prefix.mmi $out/WithinCircle_tmp/circ.split.fa | $samtools_link view -bS - > $out/WithinCircle_tmp/circ.bam
 $bedtools_link bamtobed -bed12 -i $out/WithinCircle_tmp/circ.bam | awk '$1~/^chr[0-9XY]/'| awk '$5==60'| sort -k4,4  > $out/WithinCircle_tmp/circ.tmp.bed12
 
 cat $out/WithinCircle_tmp/circ.tmp.bed12 | awk -F'\t' '{print $4"\t"$0}' | awk 'BEGIN{FS=OFS="\t"}{sub(/:.*/, "", $1); print $0}' | sort -k1,1 > $out/WithinCircle_tmp/circ.tmp.bed12.with_read_id

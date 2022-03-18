@@ -183,8 +183,10 @@ $NCLscan_hybrid_bin/OutOfCircle.sh -input_folder $out/pass2_intra -o $out/$out -
 
 
 echo  "Step: to check_intra_WithinCircle"
+join -t$'\t' $out/tmp/$out\_to_FlankingRead_80.paf.with_id.tmp $out/tmp/intra.list | cut -f '2-' > $out/tmp/$out\_to_FlankingRead_80.junction.intra.paf
+
 ## Within Circle : obtain more than one pseudo-reference (200 bp NCL sequence) 
-$NCLscan_hybrid_bin/WithinCircle.sh -input_folder $out/tmp/$out\_to_FlankingRead_80.junction.paf -c $config -o $out
+$NCLscan_hybrid_bin/WithinCircle.sh -input_folder $out/tmp/$out\_to_FlankingRead_80.junction.intra.paf -c $config -o $out
 ##Within circle _view##
 $NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/WithinCircle_events
 

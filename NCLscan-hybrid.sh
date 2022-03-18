@@ -91,8 +91,6 @@ cat $out/tmp/$out\_to_FlankingRead_80.paf | awk -F'\t' '{print $0"\t"$(NF)-$8}' 
 paste $out/tmp/$out\_to_FlankingRead_80.paf $out/tmp/$out\_to_FlankingRead_80.paf.qpos | awk -F'\t' '($5=="+"){print $0"\t"$3+$NF}($5=="-"){print $0"\t"$4-$NF}' > $out/tmp/$out\_to_FlankingRead_80.junction.paf
 
 
-# ----- Out of Circle: start ----- #
-
 cat $out/tmp/$out\_to_FlankingRead_80.junction.paf | awk -F'\t' '{print $6"\t"$0}' > $out/tmp/$out\_to_FlankingRead_80.paf.with_id.tmp
 
 echo -n > $out/tmp/All.list
@@ -159,7 +157,7 @@ do
    chr=$(echo $one | sed 's/:/\t/g' | awk '{print $1}')  
    cp $out/pass1/$one.bed12  $out/pass2_intra/$one.bed12.tmp
    
-   cat $out/pass2_intra/$one.bed12.tmp | awk '$5>=60' | cut -f '4' | sed 's/[:-]/\t/g' > $out/pieces.tmp
+   cat $out/pass2_intra/$one.bed12.tmp | awk '$5>=60' | cut -f '4' | sed -r 's/^(.+):([0-9]+)-([0-9]+)$/\1\t\2\t\3/g' > $out/pieces.tmp
    cat $out/pieces.tmp | awk -F'\t' '$2==1{print $1":"$3+1"\t"$2"-"$3}' | sort -k1,1 > $out/pieces1.tmp1
    cat $out/pieces.tmp | awk -F'\t' '$2!=1{print $1":"$2"\t"$2"-"$3}' | sort -k1,1 > $out/pieces2.tmp1
    join -t$'\t' $out/pieces1.tmp1 $out/pieces2.tmp1 > $out/pieces12.tmp1
@@ -183,8 +181,6 @@ echo "Step: to check_intra_OutOfCircle"
 ## Out of circle: long read extends more than 100 bp on one side (upstream or downstream)  
 $NCLscan_hybrid_bin/OutOfCircle.sh -input_folder $out/pass2_intra -o $out/$out -L 100
 
-# ----- Out of Circle: end ----- #
-
 
 echo  "Step: to check_intra_WithinCircle"
 ## Within Circle : obtain more than one pseudo-reference (200 bp NCL sequence) 
@@ -204,7 +200,7 @@ cat $out/tmp/pass1_inter.list | while read one
 do
    cp $out/pass1/$one.bed12 $out/pass2_inter/$one.bed12.tmp
 
-   cat $out/pass2_inter/$one.bed12.tmp | awk '$5==60' | cut -f '4' | sed 's/[:-]/\t/g' > $out/pieces.tmp
+   cat $out/pass2_inter/$one.bed12.tmp | awk '$5==60' | cut -f '4' | sed -r 's/^(.+):([0-9]+)-([0-9]+)$/\1\t\2\t\3/g' > $out/pieces.tmp
    cat $out/pieces.tmp | awk -F'\t' '$2==1{print $1":"$3+1"\t"$2"-"$3}' | sort -k1,1 > $out/pieces1.tmp1
    cat $out/pieces.tmp | awk -F'\t' '$2!=1{print $1":"$2"\t"$2"-"$3}' | sort -k1,1 > $out/pieces2.tmp1
    join -t$'\t' $out/pieces1.tmp1 $out/pieces2.tmp1 > $out/pieces12.tmp1

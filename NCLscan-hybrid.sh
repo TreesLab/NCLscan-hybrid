@@ -93,18 +93,15 @@ paste $out/tmp/$out\_to_FlankingRead_80.paf $out/tmp/$out\_to_FlankingRead_80.pa
 
 cat $out/tmp/$out\_to_FlankingRead_80.junction.paf | awk -F'\t' '{print $6"\t"$0}' > $out/tmp/$out\_to_FlankingRead_80.paf.with_id.tmp
 
-echo -n > $out/tmp/All.list
-echo -n > $out/tmp/split.bed
+cat $out/tmp/$out\_to_FlankingRead_80.junction.paf | cut -f '1' | sort | uniq > $out/tmp/All.list
+cat $out/tmp/$out\_to_FlankingRead_80.junction.paf | awk -F'\t' '{print $1"\t"0"\t"$NF"\n"$1"\t"$NF"\t"$2}' > $out/tmp/split.bed
+
+cat $out/tmp/$out\_to_FlankingRead_80.junction.paf | cut -f '1,6' | sort -k2,2 -k1,1 | uniq > $out/tmp/All.list.with_NCL_id
 cat $out/tmp/$out\_to_FlankingRead_80.list | while read one
-do 
-   join -t$'\t' $out/tmp/$out\_to_FlankingRead_80.paf.with_id.tmp <(echo $one) | cut -f '2-' > $out/tmp/$one.paf
-   cat $out/tmp/$one.paf | awk '{print $1}' | sort | uniq > $out/tmp/$one.list 
-
-   cat $out/tmp/$one.paf | awk -F'\t' '{print $1"\t"0"\t"$NF"\n"$1"\t"$NF"\t"$2}' > $out/tmp/$one.split.bed
-
-   cat $out/tmp/$one.list >> $out/tmp/All.list
-   cat $out/tmp/$one.split.bed >> $out/tmp/split.bed
+do
+   join -t$'\t' -1 2 -2 1 -o 1.1 $out/tmp/All.list.with_NCL_id <(echo $one) > $out/tmp/$one.list
 done
+
 
 $seqtk_link subseq $longread $out/tmp/All.list > $out/tmp/All.fa
 $seqtk_link subseq $out/tmp/All.fa $out/tmp/split.bed > $out/tmp/All_split.fa

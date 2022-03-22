@@ -152,7 +152,7 @@ echo "Step: at least one supported long read"
 cat $out/tmp/pass1_intra.list | while read one
 do
    chr=$(echo $one | sed 's/:/\t/g' | awk '{print $1}')  
-   cp $out/pass1/$one.bed12  $out/pass2_intra/$one.bed12.tmp
+   cat $out/pass1/$one.bed12 | sort -k4,4 > $out/pass2_intra/$one.bed12.tmp
    
    cat $out/pass2_intra/$one.bed12.tmp | awk '$5>=60' | cut -f '4' | sed -r 's/^(.+):([0-9]+)-([0-9]+)$/\1\t\2\t\3/g' > $out/pieces.tmp
    cat $out/pieces.tmp | awk -F'\t' '$2==1{print $1":"$3+1"\t"$2"-"$3}' | sort -k1,1 > $out/pieces1.tmp1
@@ -197,7 +197,7 @@ $NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/pass2_intra
 ## inter ##
 cat $out/tmp/pass1_inter.list | while read one
 do
-   cp $out/pass1/$one.bed12 $out/pass2_inter/$one.bed12.tmp
+   cat $out/pass1/$one.bed12 | sort -k4,4 > $out/pass2_inter/$one.bed12.tmp
 
    cat $out/pass2_inter/$one.bed12.tmp | awk '$5==60' | cut -f '4' | sed -r 's/^(.+):([0-9]+)-([0-9]+)$/\1\t\2\t\3/g' > $out/pieces.tmp
    cat $out/pieces.tmp | awk -F'\t' '$2==1{print $1":"$3+1"\t"$2"-"$3}' | sort -k1,1 > $out/pieces1.tmp1

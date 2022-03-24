@@ -97,11 +97,6 @@ cat $out/tmp/$out\_to_FlankingRead_80.junction.paf | cut -f '1' | sort | uniq > 
 cat $out/tmp/$out\_to_FlankingRead_80.junction.paf | awk -F'\t' '{print $1"\t"0"\t"$NF"\n"$1"\t"$NF"\t"$2}' > $out/tmp/split.bed
 
 cat $out/tmp/$out\_to_FlankingRead_80.junction.paf | cut -f '1,6' | sort -k2,2 -k1,1 | uniq > $out/tmp/All.list.with_NCL_id
-cat $out/tmp/$out\_to_FlankingRead_80.list | while read one
-do
-   join -t$'\t' -1 2 -2 1 -o 1.1 $out/tmp/All.list.with_NCL_id <(echo $one) > $out/tmp/$one.list
-done
-
 
 $seqtk_link subseq $longread $out/tmp/All.list > $out/tmp/All.fa
 $seqtk_link subseq $out/tmp/All.fa $out/tmp/split.bed > $out/tmp/All_split.fa

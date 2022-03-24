@@ -121,13 +121,13 @@ echo "Step: to diagnose split reads mapped to donor and acceptor: uniquely mappi
 
 cat $out/tmp/All.uniq.bed12 | awk -F'\t' '{print $4"\t"$0}' | awk 'BEGIN{FS="\t";OFS="\t"}{sub(/:.*/, "", $1); print $0}' | sort -k1,1 -k5,5 > $out/tmp/All.uniq.bed12.with_read_id
 
-touch $(cat $out/tmp/$out\_to_FlankingRead_80.list | awk '{print $1".bed12"}')
+touch $(cat $out/tmp/$out\_to_FlankingRead_80.list | awk '{print dir"/"$1".bed12"}' dir=$out/tmp)
 join -t$'\t' <(cat $out/tmp/All.list.with_NCL_id | sort -k1,1 -k2,2) $out/tmp/All.uniq.bed12.with_read_id | sort -k2,2 -k1,1 -k6,6 | cut -f '2-' > $out/tmp/All.uniq.bed12.with_NCL_id
 $NCLscan_hybrid_bin/split_file_by_first_column.py $out/tmp/All.uniq.bed12.with_NCL_id -o $out/tmp/ -s ".bed12"
 
 $NCLscan_hybrid_bin/check_pass1.py $out/tmp/All.uniq.bed12.with_NCL_id > $out/tmp/pass1.list
 mv $(cat $out/tmp/pass1.list | awk '{print dir"/"$1".bed12"}' dir=$out/tmp) $out/pass1/
-mv $(join -t$'\t' $out/tmp/$out\_to_FlankingRead_80.list $out/tmp/pass1.list -v 1 | awk '{print $1".bed12"}') $out/fail1/
+mv $(join -t$'\t' $out/tmp/$out\_to_FlankingRead_80.list $out/tmp/pass1.list -v 1 | awk '{print dif"/"$1".bed12"}' dir=$out/tmp) $out/fail1/
 
 cat $NCLscan | awk '{print $1":"$2":"$3":"$4":"$5":"$6 "\t" $0}' | sort -k1,1 > $out/tmp/result.tmp
 join $out/tmp/$out\_to_FlankingRead_80.list $out/tmp/result.tmp | tr ' ' \\t > $out/tmp/result.tmp2

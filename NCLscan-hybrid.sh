@@ -126,7 +126,7 @@ $NCLscan_hybrid_bin/split_file_by_first_column.py $out/tmp/All.uniq.bed12.with_N
 
 $NCLscan_hybrid_bin/check_pass1.py $out/tmp/All.uniq.bed12.with_NCL_id > $out/tmp/pass1.list
 mv $(cat $out/tmp/pass1.list | awk '{print dir"/"$1".bed12"}' dir=$out/tmp) $out/pass1/
-mv $(join -t$'\t' $out/tmp/$out\_to_FlankingRead_80.list $out/tmp/pass1.list -v 1 | awk '{print dif"/"$1".bed12"}' dir=$out/tmp) $out/fail1/
+mv $(join -t$'\t' $out/tmp/$out\_to_FlankingRead_80.list $out/tmp/pass1.list -v 1 | awk '{print dir"/"$1".bed12"}' dir=$out/tmp) $out/fail1/
 
 cat $NCLscan | awk '{print $1":"$2":"$3":"$4":"$5":"$6 "\t" $0}' | sort -k1,1 > $out/tmp/result.tmp
 join $out/tmp/$out\_to_FlankingRead_80.list $out/tmp/result.tmp | tr ' ' \\t > $out/tmp/result.tmp2

@@ -98,6 +98,11 @@ cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf \
 $seqtk_link subseq $out/tmp/All.fa $out/WithinCircle_tmp/circ.split.bed > $out/WithinCircle_tmp/circ.split.fa
 
 echo "Step1: to align split sequences of a long read against whole genome"
+
+if [ ! -e "$genome_prefix.mmi" ]; then
+   $minimap2_link -d $genome_prefix.mmi $genome_prefix.fa
+fi
+
 $minimap2_link -t $threads -ax splice $genome_prefix.mmi $out/WithinCircle_tmp/circ.split.fa | $samtools_link view -bS - > $out/WithinCircle_tmp/circ.bam
 $bedtools_link bamtobed -bed12 -i $out/WithinCircle_tmp/circ.bam | awk '$1~/^chr[0-9XY]/'| awk '$5==60'| sort -k4,4  > $out/WithinCircle_tmp/circ.tmp.bed12
 

@@ -107,7 +107,11 @@ $seqtk_link subseq $longread $out/tmp/All.list > $out/tmp/All.fa
 $seqtk_link subseq $out/tmp/All.fa $out/tmp/split.bed > $out/tmp/All_split.fa
 
 echo "Step: to align splited reads against whole genome"
-$minimap2_link -d $genome_prefix.mmi $genome_prefix.fa
+
+if [ ! -e "$genome_prefix.mmi" ]; then
+   $minimap2_link -d $genome_prefix.mmi $genome_prefix.fa
+fi
+
 $minimap2_link -t $threads -ax splice $genome_prefix.mmi $out/tmp/All_split.fa | $samtools_link view -bS - > $out/tmp/All.bam
 
 $bedtools_link bamtobed -bed12 -i $out/tmp/All.bam | awk '$1~/^chr[0-9XY]/'| awk '$5>0'| sort -k4,4 > $out/tmp/All.bed12

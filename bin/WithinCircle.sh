@@ -61,25 +61,23 @@ mkdir -p \
     $out/WithinCircle_tmp/WithinCircle_reads_tmp
 
 
-cat $input | awk '{print $1 "\t" $5 "\t" $6}' | sort -k3,3 -k1,1 | uniq -c | awk '$1 > 1' | sed 's/:/\t/g' | awk '$4==$7' | awk '{print $2 "\t" $3 "\t" $4":"$5":"$6":"$7":"$8":"$9}' > $out/WithinCircle_tmp/FlankingRead_80_twice.list
-cat $out/WithinCircle_tmp/FlankingRead_80_twice.list | cut -f '1' | sort | uniq > $out/WithinCircle_tmp/FlankingRead_80_twice.readID
-
+cat $input | awk '{print $1 "\t" $5 "\t" $6}' | sort -k3,3 -k1,1 -k2,2 | uniq -c | awk '$1 > 1' | sed 's/:/\t/g' | awk '$4==$7' | awk '{print $2 "\t" $3 "\t" $4":"$5":"$6":"$7":"$8":"$9}' > $out/WithinCircle_tmp/FlankingRead_80_twice.list
 cat $out/WithinCircle_tmp/FlankingRead_80_twice.list > $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list
-cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list | awk '{print $1}' | sort | uniq > $out/WithinCircle_tmp/FlankingRead_80_twice_intra.readID
+cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list | tr '\t' '_' | sort > $out/WithinCircle_tmp/FlankingRead_80_twice_intra.key
 
-cat $input | sort -k1,1 > $out/WithinCircle_tmp/FlankingRead_80.sorted_by_read_id.paf
-join -t$'\t' $out/WithinCircle_tmp/FlankingRead_80.sorted_by_read_id.paf $out/WithinCircle_tmp/FlankingRead_80_twice_intra.readID > $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf
+cat $input | awk '{print $1"_"$5"_"$6"\t"$0}' | sort -k1,1 | sort -k1,1 > $out/WithinCircle_tmp/FlankingRead_80.paf.with_key
+join -t$'\t' $out/WithinCircle_tmp/FlankingRead_80.paf.with_key $out/WithinCircle_tmp/FlankingRead_80_twice_intra.key | cut -f'2-' > $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf
 
 cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list | awk '{print $3}' | sort  | uniq > $out/WithinCircle_tmp/circ_twice_intra.list
 
 
 cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf \
-    | awk -F'\t' '{print $1"\t"$2"\t"$NF}' \
-    | sort -k1,1 -k3,3n \
+    | awk -F'\t' '{print $1"\t"$2"\t"$NF"\t"$6}' \
+    | sort -k4,4 -k1,1 -k3,3n \
     | awk 'BEGIN{
-            FS=OFS="\t"; 
-            readID=""; 
-            readLen=0; 
+            FS=OFS="\t";
+            readID="";
+            readLen=0;
             start=0;
         }{
             if($1!=readID){
@@ -88,7 +86,8 @@ cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf \
                 readLen=$2; 
                 start=0;
             }; 
-            print readID, start, $3; start=$3
+            print readID, start, $3;
+            start=$3
         }
         END{
             print readID, start, readLen
@@ -106,44 +105,34 @@ cat $out/WithinCircle_tmp/circ.tmp.bed12 | awk -F'\t' '{print $4"\t"$0}' | awk '
 
 echo "Step2: to report a circRNA long read"
 
-cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf | cut -f '1' | sort | uniq -c | awk '{print $2"\t"$1}' > $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf.fragmentNum
-
 cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list | awk -F'\t' '{print $3"\t"$0}' | sort -k1,1 -k2,2 -k3,3 | $NCLscan_hybrid_bin/split_file_by_first_column.py - -o $out/WithinCircle_tmp/WithinCircle_list_tmp -s .list
 
 join -t$'\t' $out/WithinCircle_tmp/circ.tmp.bed12.with_read_id <(cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list | sort -k1,1) | sort -k15,15 -k1,1 -k5,5 | awk -F'\t' '{print $15"\t"$0}' | cut -f '-14' | $NCLscan_hybrid_bin/split_file_by_first_column.py - -o $out/WithinCircle_tmp/WithinCircle_bed_tmp -s .bed12.tmp
 
-cat $out/WithinCircle_tmp/circ_twice_intra.list | while read CircOne
+cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf | cut -f '1,5,6' | sort -k3,3 -k1,1 -k2,2 | uniq -c | awk '{print $2"\t"$3"\t"$4"\t"$1}' | awk 'BEGIN{FS=OFS="\t";event=""; idx=0}{if($3!=event){event=$3; idx=1;}; print $0,idx; idx+=1;}' > $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf.fragmentNum.readi
+
+cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf.fragmentNum.readi | while read ReadOne strand CircOne fragmentNum readi
 do
-    CircOneNum=$(cat $out/WithinCircle_tmp/WithinCircle_list_tmp/$CircOne.list | wc -l )
-    for readi in $(seq 1 1 $CircOneNum)
-    do 
-       one=$(cat $out/WithinCircle_tmp/WithinCircle_list_tmp/$CircOne.list | head -n $readi | tail -n 1)
-       # echo $one
-       ReadOne=$(echo $one | awk '{print $1}')
-       
-       intraChr=$(echo $one | awk '{print $3}' | sed 's/:/\t/g' | awk '{print $1}')
-       intraDonor=$(echo $one | awk '{print $3}' | sed 's/:/\t/g' | awk '{print $2}')
-       intraAcceptor=$(echo $one | awk '{print $3}'| sed 's/:/\t/g' | awk '{print $5}')
-       intraMax=$(echo $intraDonor"\n"$intraAcceptor | sort -r | head -n 1)
-       intraMin=$(echo $intraDonor"\n"$intraAcceptor | sort | head -n 1)
+    intraChr=$(echo $CircOne | cut -d':' -f'1')
+    intraDonor=$(echo $CircOne | cut -d':' -f'2')
+    intraAcceptor=$(echo $CircOne | cut -d':' -f'5')
+    intraMax=$(echo $intraDonor"\n"$intraAcceptor | sort -r | head -n 1)
+    intraMin=$(echo $intraDonor"\n"$intraAcceptor | sort | head -n 1)
 
-       fragmentNum=$(join -t$'\t' $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf.fragmentNum <(echo $ReadOne) | head -1 | cut -f'2')
+    join -t$'\t' $out/WithinCircle_tmp/WithinCircle_bed_tmp/$CircOne.bed12.tmp <(echo $ReadOne) | cut -f '2-' > $out/WithinCircle_tmp/$CircOne.tmp.bed12
 
-       join -t$'\t' $out/WithinCircle_tmp/WithinCircle_bed_tmp/$CircOne.bed12.tmp <(echo $ReadOne) | cut -f '2-' > $out/WithinCircle_tmp/$CircOne.tmp.bed12
+    bedNum=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $4}' | wc -l)
 
-       bedNum=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $4}' | wc -l)
-       
-       chrNum=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $1}' | uniq | wc -l) 
-       chrSplit=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $1}' | uniq | head -n 1)  
-       startSplit=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $2 "\n" $3}' | sort | head -n 1)
-       endSplit=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $2 "\n" $3}' | sort -r | head -n 1)
+    chrNum=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $1}' | uniq | wc -l) 
+    chrSplit=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $1}' | uniq | head -n 1)  
+    startSplit=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $2 "\n" $3}' | sort | head -n 1)
+    endSplit=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $2 "\n" $3}' | sort -r | head -n 1)
 
-       if [ "$bedNum" -eq $(($fragmentNum+1)) ] && [ "$chrNum" -eq 1 ] && [ $(($intraMin-10)) -le "$startSplit" ] && [ "$endSplit" -le $(($intraMax+10)) ] && [ "$intraChr"=="$chrSplit" ]
-       then 
-             cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 > $out/WithinCircle_tmp/WithinCircle_reads_tmp/$CircOne.$readi.bed12
-             cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 >> $out/WithinCircle_events/$CircOne.bed12
-       fi 
-    done    
+    if [ "$bedNum" -eq $(($fragmentNum+1)) ] && [ "$chrNum" -eq 1 ] && [ $(($intraMin-10)) -le "$startSplit" ] && [ "$endSplit" -le $(($intraMax+10)) ] && [ "$intraChr"=="$chrSplit" ]
+    then 
+        cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 > $out/WithinCircle_tmp/WithinCircle_reads_tmp/$CircOne.$readi.bed12
+        cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 >> $out/WithinCircle_events/$CircOne.bed12
+    fi
 done
 
 ls $out/WithinCircle_tmp/WithinCircle_reads_tmp/ | sed 's/\./\t/' | awk '{print $1}' | sort | uniq -c | awk '{print $2  "\t" "1" "\t" $1}' > $out/$out\_WithinCircle.result

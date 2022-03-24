@@ -108,14 +108,16 @@ echo "Step2: to report a circRNA long read"
 
 cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf | cut -f '1' | sort | uniq -c | awk '{print $2"\t"$1}' > $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf.fragmentNum
 
+cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list | awk -F'\t' '{print $3"\t"$0}' | sort -k1,1 -k2,2 -k3,3 | $NCLscan_hybrid_bin/split_file_by_first_column.py - -o $out/WithinCircle_tmp/WithinCircle_list_tmp -s .list
+
+join -t$'\t' $out/WithinCircle_tmp/circ.tmp.bed12.with_read_id <(cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list | sort -k1,1) | sort -k15,15 -k1,1 -k5,5 | awk -F'\t' '{print $15"\t"$0}' | cut -f '-14' | $NCLscan_hybrid_bin/split_file_by_first_column.py - -o $out/WithinCircle_tmp/WithinCircle_bed_tmp -s .bed12.tmp
+
 cat $out/WithinCircle_tmp/circ_twice_intra.list | while read CircOne
 do
-    join -t$'\t' -1 3 -2 1 -o 1.1,1.2,1.3 $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list <(echo $CircOne) > $out/WithinCircle_tmp/CircOne_read.list
-
-    CircOneNum=$(cat $out/WithinCircle_tmp/CircOne_read.list | wc -l )
+    CircOneNum=$(cat $out/WithinCircle_tmp/WithinCircle_list_tmp/$CircOne.list | wc -l )
     for readi in $(seq 1 1 $CircOneNum)
     do 
-       one=$(cat $out/WithinCircle_tmp/CircOne_read.list | head -n $readi | tail -n 1)
+       one=$(cat $out/WithinCircle_tmp/WithinCircle_list_tmp/$CircOne.list | head -n $readi | tail -n 1)
        # echo $one
        ReadOne=$(echo $one | awk '{print $1}')
        
@@ -127,7 +129,7 @@ do
 
        fragmentNum=$(join -t$'\t' $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf.fragmentNum <(echo $ReadOne) | head -1 | cut -f'2')
 
-       join -t$'\t' $out/WithinCircle_tmp/circ.tmp.bed12.with_read_id <(echo $ReadOne) | cut -f '2-' > $out/WithinCircle_tmp/$CircOne.tmp.bed12
+       join -t$'\t' $out/WithinCircle_tmp/WithinCircle_bed_tmp/$CircOne.bed12.tmp <(echo $ReadOne) | cut -f '2-' > $out/WithinCircle_tmp/$CircOne.tmp.bed12
 
        bedNum=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $4}' | wc -l)
        

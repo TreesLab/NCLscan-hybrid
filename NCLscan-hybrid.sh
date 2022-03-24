@@ -119,25 +119,15 @@ join -t$'\t' $out/tmp/All.bed12.sorted $out/tmp/All.bed12.uniq.list | cut -f'2-'
 
 echo "Step: to diagnose split reads mapped to donor and acceptor: uniquely mapping and same chromsome"
 
-cat $out/tmp/All.uniq.bed12 | awk -F'\t' '{print $4"\t"$0}' | awk 'BEGIN{FS="\t";OFS="\t"}{sub(/:.*/, "", $1); print $0}' | sort -k1,1 -k5,5 > $out/tmp/All.uniq.read_ID.bed12
+cat $out/tmp/All.uniq.bed12 | awk -F'\t' '{print $4"\t"$0}' | awk 'BEGIN{FS="\t";OFS="\t"}{sub(/:.*/, "", $1); print $0}' | sort -k1,1 -k5,5 > $out/tmp/All.uniq.bed12.with_read_id
 
-cat $out/tmp/$out\_to_FlankingRead_80.list | while read one
-do 
-   join -t$'\t' $out/tmp/All.uniq.read_ID.bed12 $out/tmp/$one.list | cut -f '2-' > $out/tmp/$one.bed12
+touch $(cat $out/tmp/$out\_to_FlankingRead_80.list | awk '{print $1".bed12"}')
+join -t$'\t' <(cat $out/tmp/All.list.with_NCL_id | sort -k1,1 -k2,2) $out/tmp/All.uniq.bed12.with_read_id | sort -k2,2 -k1,1 -k6,6 | cut -f '2-' > $out/tmp/All.uniq.bed12.with_NCL_id
+$NCLscan_hybrid_bin/split_file_by_first_column.py $out/tmp/All.uniq.bed12.with_NCL_id -o $out/tmp/ -s ".bed12"
 
-   chr_donor=$(echo $one | sed 's/:/\t/g' | awk '{print $1}')  
-   chr_acceptor=$(echo $one | sed 's/:/\t/g' | awk '{print $4}')
-
-   donor_count=$(cat $out/tmp/$one.bed12 | awk '$1==donor' donor=$chr_donor | wc -l)  
-   acceptor_count=$(cat $out/tmp/$one.bed12 | awk '$1==acceptor' acceptor=$chr_acceptor | wc -l)  
-
-   if [[ "$donor_count" -gt 0 ]] && [[ "$acceptor_count" -gt 0 ]]
-      then mv $out/tmp/$one.bed12  $out/pass1/$one.bed12
-      else mv $out/tmp/$one.bed12  $out/fail1/$one.bed12
-   fi
-done
-
-ls $out/pass1 | sed 's/\./\t/g' | awk '{print $1}' | sort -k1,1 > $out/tmp/pass1.list
+$NCLscan_hybrid_bin/check_pass1.py $out/tmp/All.uniq.bed12.with_NCL_id > $out/tmp/pass1.list
+mv $(cat $out/tmp/pass1.list | awk '{print dir"/"$1".bed12"}' dir=$out/tmp) $out/pass1/
+mv $(join -t$'\t' $out/tmp/$out\_to_FlankingRead_80.list $out/tmp/pass1.list -v 1 | awk '{print $1".bed12"}') $out/fail1/
 
 cat $NCLscan | awk '{print $1":"$2":"$3":"$4":"$5":"$6 "\t" $0}' | sort -k1,1 > $out/tmp/result.tmp
 join $out/tmp/$out\_to_FlankingRead_80.list $out/tmp/result.tmp | tr ' ' \\t > $out/tmp/result.tmp2

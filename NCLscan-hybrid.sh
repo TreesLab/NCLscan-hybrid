@@ -38,7 +38,7 @@ done
 if [[ -z "$longread" ]]; then
    echo ""
    echo "Usage:"
-   echo "./NCLscan-hybrid.sh -long [input long read fasta file] -long_type [pb or ont] -nclscan [NCLscan result file] -c [configure file link] -o [output_prefix] -t [num_threads]"
+   echo "./NCLscan-hybrid.sh -long [input long read fasta file] -long_type [pb or ont] -nclscan [NCLscan result file] -c [configure file link] -o [output_prefix_name] -t [num_threads]"
    echo ""
    exit
 fi

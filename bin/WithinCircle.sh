@@ -30,7 +30,7 @@ done
 if [[ -z "$input" ]]; then
    echo ""
    echo "Usage:"
-   echo "./WithinCircle.sh -input_folder [input folder] -c [configure file link] -o [output_prefix] -t [num_threads]"
+   echo "./WithinCircle.sh -input_folder [input folder] -c [configure file link] -o [output_prefix_name] -t [num_threads]"
    echo ""
    exit
 fi
@@ -39,7 +39,7 @@ fi
 if [[ -z "$out" ]]; then
    echo ""
    echo "Usage:"
-   echo "./WithinCircle.sh -input_folder [input folder] -c [configure file link] -o [output_prefix] -t [num_threads]"
+   echo "./WithinCircle.sh -input_folder [input folder] -c [configure file link] -o [output_prefix_name] -t [num_threads]"
    echo ""
    exit
 fi
@@ -113,6 +113,7 @@ echo "Step2: to report a circRNA long read"
 cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list | awk -F'\t' '{print $3"\t"$0}' | sort -k1,1 -k2,2 -k3,3 | $NCLscan_hybrid_bin/split_file_by_first_column.py - -o $out/WithinCircle_tmp/WithinCircle_list_tmp -s .list
 
 join -t$'\t' $out/WithinCircle_tmp/circ.tmp.bed12.with_read_id <(cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list | sort -k1,1) | sort -k15,15 -k1,1 -k5,5 | awk -F'\t' '{print $15"\t"$0}' | cut -f '-14' | $NCLscan_hybrid_bin/split_file_by_first_column.py - -o $out/WithinCircle_tmp/WithinCircle_bed_tmp -s .bed12.tmp
+touch $(cat $out/WithinCircle_tmp/circ_twice_intra.list | awk '{print dir"/"$1".bed12.tmp"}' dir=$out/WithinCircle_tmp/WithinCircle_bed_tmp)
 
 cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf | cut -f '1,5,6' | sort -k3,3 -k1,1 -k2,2 | uniq -c | awk '{print $2"\t"$3"\t"$4"\t"$1}' | awk 'BEGIN{FS=OFS="\t";event=""; idx=0}{if($3!=event){event=$3; idx=1;}; print $0,idx; idx+=1;}' > $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf.fragmentNum.readi
 
@@ -124,19 +125,19 @@ do
     intraMax=$(echo $intraDonor"\n"$intraAcceptor | sort -r | head -n 1)
     intraMin=$(echo $intraDonor"\n"$intraAcceptor | sort | head -n 1)
 
-    join -t$'\t' $out/WithinCircle_tmp/WithinCircle_bed_tmp/$CircOne.bed12.tmp <(echo $ReadOne) | cut -f '2-' > $out/WithinCircle_tmp/$CircOne.tmp.bed12
+    join -t$'\t' $out/WithinCircle_tmp/WithinCircle_bed_tmp/$CircOne.bed12.tmp <(echo $ReadOne) | cut -f '2-' > $out/WithinCircle_tmp/$CircOne.$readi.tmp.bed12
 
-    bedNum=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $4}' | wc -l)
+    bedNum=$(cat $out/WithinCircle_tmp/$CircOne.$readi.tmp.bed12 | awk '{print $4}' | wc -l)
 
-    chrNum=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $1}' | uniq | wc -l) 
-    chrSplit=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $1}' | uniq | head -n 1)  
-    startSplit=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $2 "\n" $3}' | sort | head -n 1)
-    endSplit=$(cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 | awk '{print $2 "\n" $3}' | sort -r | head -n 1)
+    chrNum=$(cat $out/WithinCircle_tmp/$CircOne.$readi.tmp.bed12 | awk '{print $1}' | uniq | wc -l) 
+    chrSplit=$(cat $out/WithinCircle_tmp/$CircOne.$readi.tmp.bed12 | awk '{print $1}' | uniq | head -n 1)  
+    startSplit=$(cat $out/WithinCircle_tmp/$CircOne.$readi.tmp.bed12 | awk '{print $2 "\n" $3}' | sort | head -n 1)
+    endSplit=$(cat $out/WithinCircle_tmp/$CircOne.$readi.tmp.bed12 | awk '{print $2 "\n" $3}' | sort -r | head -n 1)
 
     if [ "$bedNum" -eq $(($fragmentNum+1)) ] && [ "$chrNum" -eq 1 ] && [ $(($intraMin-10)) -le "$startSplit" ] && [ "$endSplit" -le $(($intraMax+10)) ] && [ "$intraChr"=="$chrSplit" ]
     then 
-        cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 > $out/WithinCircle_tmp/WithinCircle_reads_tmp/$CircOne.$readi.bed12
-        cat $out/WithinCircle_tmp/$CircOne.tmp.bed12 >> $out/WithinCircle_events/$CircOne.bed12
+        cat $out/WithinCircle_tmp/$CircOne.$readi.tmp.bed12 > $out/WithinCircle_tmp/WithinCircle_reads_tmp/$CircOne.$readi.bed12
+        cat $out/WithinCircle_tmp/$CircOne.$readi.tmp.bed12 >> $out/WithinCircle_events/$CircOne.bed12
     fi
 done
 

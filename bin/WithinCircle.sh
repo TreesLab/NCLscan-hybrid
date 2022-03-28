@@ -76,12 +76,14 @@ cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.paf \
     | sort -k4,4 -k1,1 -k3,3n \
     | awk 'BEGIN{
             FS=OFS="\t";
+            eventID="";
             readID="";
             readLen=0;
             start=0;
         }{
-            if($1!=readID){
+            if(!(($1==readID) && ($4==eventID))){
                 print readID, start, readLen; 
+                eventID=$4;
                 readID=$1; 
                 readLen=$2; 
                 start=0;

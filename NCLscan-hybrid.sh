@@ -77,16 +77,14 @@ $NCLscan_hybrid_bin/FlankingSeq.sh \
    -o $out/$out\_100bp
 
 echo "Step: to align long reads against flankingSeqs"
-$minimap2_link -d $out/$out\_100bp_flanking_merged.mmi $out/$out\_100bp_flanking_merged.fa   
+# $minimap2_link -d $out/$out\_100bp_flanking_merged.mmi $out/$out\_100bp_flanking_merged.fa   
 $minimap2_link -t $threads -x map-$long_type $out/$out\_100bp_flanking_merged.fa $longread -c --secondary=no > $out/tmp/$out\_to_FlankingRead.paf
 
 cat $out/tmp/$out\_to_FlankingRead.paf | sort -k6,6 -k1,1 -k3,3n -k4,4n > $out/tmp/$out\_to_FlankingRead.sorted.paf
 cat $out/tmp/$out\_to_FlankingRead.sorted.paf | awk -F'\t' '{print $6"\t"$0}' > $out/tmp/$out\_to_FlankingRead.sorted.paf.with_id.tmp
 join -t$'\t' $out/tmp/$out\_to_FlankingRead.sorted.paf.with_id.tmp $out/$out\_100bp_NCL_flanking.length | awk -F'\t' '($10 - $(NF-1) > 10) && ($(NF-1) - $9 > 10)' | awk 'BEGIN{FS=OFS="\t"}{NF-=1; print $0}' | cut -f '2-' > $out/tmp/$out\_to_FlankingRead_overhang10.paf
 
-#closed uniquely mapping for long reads ($12==60)
-#cat $out/tmp/$out\_to_FlankingRead_overhang10.paf | awk -F'\t' '$11/$7 > 0.8 && $11/$10 < 2 && $12 == 60' > $out/tmp/$out\_to_FlankingRead_80.paf
-cat $out/tmp/$out\_to_FlankingRead_overhang10.paf | awk -F'\t' '$11/$7 > 0.8 && $11/$10 < 2' > $out/tmp/$out\_to_FlankingRead_80.paf
+cat $out/tmp/$out\_to_FlankingRead_overhang10.paf | awk -F'\t' '$11/$7 > 0.8 && $11/$10 < 2 && $12 == 60' > $out/tmp/$out\_to_FlankingRead_80.paf
 cat $out/tmp/$out\_to_FlankingRead_80.paf | cut -f '6' | sort | uniq  > $out/tmp/$out\_to_FlankingRead_80.list
 
 cat $out/tmp/$out\_to_FlankingRead_80.paf | awk -F'\t' '{print $0"\t"$(NF)-$8}' | awk -F'\t' '{print $(NF-2)"\t"$NF}' | sed 's/^cg:Z://g' | $NCLscan_hybrid_bin/get_qpos.py -f - > $out/tmp/$out\_to_FlankingRead_80.paf.qpos
@@ -137,50 +135,33 @@ cat $out/tmp/result.tmp2 | awk '$10==0 {print $1}' | sort > $out/tmp/inter.list
 join $out/tmp/intra.list $out/tmp/pass1.list  > $out/tmp/pass1_intra.list
 join $out/tmp/inter.list $out/tmp/pass1.list  > $out/tmp/pass1_inter.list
 
+
 echo "Step: at least one supported long read"
 ## intra ##
 cat $out/tmp/pass1_intra.list | while read one
 do
-   cat $out/pass1/$one.bed12 | sort -k4,4 > $out/tmp/$one.bed12.tmp
+   chr=$(echo $one | sed 's/:/\t/g' | awk '{print $1}')  
+   cat $out/pass1/$one.bed12 | sort -k4,4 > $out/pass2_intra/$one.bed12.tmp
    
-   ##one of the end position of split long reads within upstream/downstream 10 bp of donor site
-   ##the other of the end position of split long reads within upstream/downstream 10 bp of acceptor site
-   one_name=$(echo $one | sed 's/\.bed12//g')
-   intra_chr=$(echo $one | sed 's/:/\t/g' | awk '{print $1}')
-   intra_donor=$(echo $one | sed 's/:/\t/g' | awk '{print $2}')
-   intra_acceptor=$(echo $one | sed 's/:/\t/g' | awk '{print $5}')
-   upstream_10b_bed=$(echo $intra_donor $intra_acceptor | tr ' ' \\n | sort | head -n 1 | awk '{print chr "\t" $1-10 "\t" $1+10 "\t" "upstream"}' chr=$intra_chr)
-   downstream_10b_bed=$(echo $intra_donor $intra_acceptor | tr ' ' \\n | sort | tail -n 1 | awk '{print chr "\t" $1-10 "\t" $1+10 "\t" "downstream"}' chr=$intra_chr)
-   echo $upstream_10b_bed"\n"$downstream_10b_bed | tr  ' ' \\t | sort -k1,1 -k2,2n > $out/tmp/$one\_10bp.bed
-   
-   cat $out/tmp/$one.bed12.tmp | grep ':1-' | awk '{print $1 "\t" $3-1 "\t" $3 "\t " $4}' > $out/tmp/$one.bed12.tmp.OneSide
-   cat $out/tmp/$one.bed12.tmp | grep -v ':1-' | awk '{print $1 "\t" $2-1 "\t" $2 "\t " $4}' > $out/tmp/$one.bed12.tmp.TheOtherSide
-   cat $out/tmp/$one.bed12.tmp.OneSide $out/tmp/$one.bed12.tmp.TheOtherSide | sort -k1,1 -k2,2n > $out/tmp/$one.bed12.tmp.points
-   bedtools intersect -a $out/tmp/$one.bed12.tmp.points -b $out/tmp/$one\_10bp.bed -f 1 -wa -wb | awk '{print $4 "\t" $8}' | sort | uniq > $out/tmp/$one.bed12.tmp.list
-   join $out/tmp/$one.bed12.tmp.list $out/tmp/$one.bed12.tmp -1 1 -2 4 | tr '' \\t  > $out/tmp/$one.bed12.tmp2
-   
-   cat $out/tmp/$one.bed12.tmp2 | awk '$6>=60' | awk '{print $1"\t"$2 }' | sed -r 's/^(.+):([0-9]+)-([0-9]+)\t([a-z]+)$/\1\t\2\t\3\t\4/g' > $out/pieces.tmp
-   cat $out/pieces.tmp | awk -F'\t' '$2==1{print $1":"$3+1"\t"$2"-"$3 "\t" $4}' | sort -k1,1 > $out/pieces1.tmp1
-   cat $out/pieces.tmp | awk -F'\t' '$2!=1{print $1":"$2"\t"$2"-"$3 "\t" $4}' | sort -k1,1 > $out/pieces2.tmp1
-   ##one upstream and the other downstream
-   join $out/pieces1.tmp1 $out/pieces2.tmp1 | awk '$3!=$5 {print $1 "\t" $2 "\t" $4}' > $out/pieces12.tmp1
+   cat $out/pass2_intra/$one.bed12.tmp | awk '$5>=60' | cut -f '4' | sed -r 's/^(.+):([0-9]+)-([0-9]+)$/\1\t\2\t\3/g' > $out/pieces.tmp
+   cat $out/pieces.tmp | awk -F'\t' '$2==1{print $1":"$3+1"\t"$2"-"$3}' | sort -k1,1 > $out/pieces1.tmp1
+   cat $out/pieces.tmp | awk -F'\t' '$2!=1{print $1":"$2"\t"$2"-"$3}' | sort -k1,1 > $out/pieces2.tmp1
+   join -t$'\t' $out/pieces1.tmp1 $out/pieces2.tmp1 > $out/pieces12.tmp1
 
    cat $out/pieces12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$3}' > $out/pieces1.tmp2
    cat $out/pieces12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$4}' > $out/pieces2.tmp2
    cat $out/pieces1.tmp2 $out/pieces2.tmp2 | sort > $out/long.tmp1
-   join $out/tmp/$one.bed12.tmp $out/long.tmp1 -1 4 -2 1 | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp2
+   join -t$'\t' $out/pass2_intra/$one.bed12.tmp $out/long.tmp1 -1 4 -2 1 | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp2
    
    count_long=$(cat $out/long.tmp2 | wc -l)
 
-   if [ "$count_long" -gt 0 ]; then
-      
+   if [[ "$count_long" -gt 0 ]]; then
+  
       cat $out/long.tmp2 | awk '$5==60' > $out/pass2_intra/$one.bed12
    fi
-    
-   #rm -r -f $out/tmp/$one.bed12.tmp
-   #rm -r -f $out/tmp/$one.bed12.tmp2
-done
 
+   rm -r -f $out/pass2_intra/$one.bed12.tmp
+done
 
 echo "Step: to check_intra_OutOfCircle"
 ## Out of circle: long read extends more than 100 bp on one side (upstream or downstream)  
@@ -224,14 +205,14 @@ do
       cat $out/long.tmp2 | awk '$5>=60' > $out/pass2_inter/$one.bed12
    fi
 
-   #rm -r -f $out/pass2_inter/$one.bed12.tmp
+   rm -r -f $out/pass2_inter/$one.bed12.tmp
 
 done
 
 ##inter_view##
 $NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/pass2_inter
 
-rm -r -f \
+rm -rf \
    $out/pieces.tmp \
    $out/piece1.tmp1 \
    $out/piece2.tmp1 \

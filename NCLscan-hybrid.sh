@@ -214,11 +214,11 @@ $NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/pass2_inter
 
 rm -rf \
    $out/pieces.tmp \
-   $out/piece1.tmp1 \
-   $out/piece2.tmp1 \
-   $out/piece1.tmp2 \
-   $out/piece2.tmp2 \
-   $out/piece12.tmp1 \
+   $out/pieces1.tmp1 \
+   $out/pieces2.tmp1 \
+   $out/pieces1.tmp2 \
+   $out/pieces2.tmp2 \
+   $out/pieces12.tmp1 \
    $out/long.tmp1 \
    $out/long.tmp2
 

@@ -140,27 +140,66 @@ echo "Step: at least one supported long read"
 ## intra ##
 cat $out/tmp/pass1_intra.list | while read one
 do
-   chr=$(echo $one | sed 's/:/\t/g' | awk '{print $1}')  
-   cat $out/pass1/$one.bed12 | sort -k4,4 > $out/pass2_intra/$one.bed12.tmp
+#   chr=$(echo $one | sed 's/:/\t/g' | awk '{print $1}')  
+#   cat $out/pass1/$one.bed12 | sort -k4,4 > $out/pass2_intra/$one.bed12.tmp
+#   
+#   cat $out/pass2_intra/$one.bed12.tmp | awk '$5>=60' | cut -f '4' | sed -r 's/^(.+):([0-9]+)-([0-9]+)$/\1\t\2\t\3/g' > $out/pieces.tmp
+#   cat $out/pieces.tmp | awk -F'\t' '$2==1{print $1":"$3+1"\t"$2"-"$3}' | sort -k1,1 > $out/pieces1.tmp1
+#   cat $out/pieces.tmp | awk -F'\t' '$2!=1{print $1":"$2"\t"$2"-"$3}' | sort -k1,1 > $out/pieces2.tmp1
+#   join -t$'\t' $out/pieces1.tmp1 $out/pieces2.tmp1 > $out/pieces12.tmp1
+#
+#   cat $out/pieces12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$3}' > $out/pieces1.tmp2
+#   cat $out/pieces12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$4}' > $out/pieces2.tmp2
+#   cat $out/pieces1.tmp2 $out/pieces2.tmp2 | sort > $out/long.tmp1
+#   join -t$'\t' $out/pass2_intra/$one.bed12.tmp $out/long.tmp1 -1 4 -2 1 | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp2
+#   
+#   count_long=$(cat $out/long.tmp2 | wc -l)
+#
+#   if [[ "$count_long" -gt 0 ]]; then
+#  
+#      cat $out/long.tmp2 | awk '$5==60' > $out/pass2_intra/$one.bed12
+#   fi
+#
+#   rm -r -f $out/pass2_intra/$one.bed12.tmp
    
-   cat $out/pass2_intra/$one.bed12.tmp | awk '$5>=60' | cut -f '4' | sed -r 's/^(.+):([0-9]+)-([0-9]+)$/\1\t\2\t\3/g' > $out/pieces.tmp
-   cat $out/pieces.tmp | awk -F'\t' '$2==1{print $1":"$3+1"\t"$2"-"$3}' | sort -k1,1 > $out/pieces1.tmp1
-   cat $out/pieces.tmp | awk -F'\t' '$2!=1{print $1":"$2"\t"$2"-"$3}' | sort -k1,1 > $out/pieces2.tmp1
-   join -t$'\t' $out/pieces1.tmp1 $out/pieces2.tmp1 > $out/pieces12.tmp1
+   cat $out/pass1/$one.bed12 | sort -k4,4 > $out/tmp/$one.bed12.tmp
+   #one of the end position of split long reads within upstream/downstream 10 bp of donor site
+   #the other of the end position of split long reads within upstream/downstream 10 bp of acceptor site
+   one_name=$(echo $one | sed 's/\.bed12//g')
+   intra_chr=$(echo $one | sed 's/:/\t/g' | awk '{print $1}')
+   intra_donor=$(echo $one | sed 's/:/\t/g' | awk '{print $2}')
+   intra_acceptor=$(echo $one | sed 's/:/\t/g' | awk '{print $5}')
+   upstream_10b_bed=$(echo $intra_donor $intra_acceptor | tr ' ' \\n | sort | head -n 1 | awk '{print chr "\t" $1-10 "\t" $1+10 "\t" "upstream"}' chr=$intra_chr)
+   downstream_10b_bed=$(echo $intra_donor $intra_acceptor | tr ' ' \\n | sort | tail -n 1 | awk '{print chr "\t" $1-10 "\t" $1+10 "\t" "downstream"}' chr=$intra_chr)
+   echo $upstream_10b_bed"\n"$downstream_10b_bed | tr  ' ' \\t | sort -k1,1 -k2,2n > $out/tmp/$one\_10bp.bed
+   
+   cat $out/tmp/$one.bed12.tmp | awk '{print $1 "\t" $2-1 "\t" $2 "\t " $4}' > $out/tmp/$one.bed12.tmp.OneSide
+   cat $out/tmp/$one.bed12.tmp | awk '{print $1 "\t" $3-1 "\t" $3 "\t " $4}' > $out/tmp/$one.bed12.tmp.TheOtherSide
+   cat $out/tmp/$one.bed12.tmp.OneSide $out/tmp/$one.bed12.tmp.TheOtherSide | sort -k1,1 -k2,2n > $out/tmp/$one.bed12.tmp.points
+   $bedtools_link intersect -a $out/tmp/$one.bed12.tmp.points -b $out/tmp/$one\_10bp.bed -f 1 -wa -wb | awk '{print $4 "\t" $8}' | sort | uniq > $out/tmp/$one.bed12.tmp.list
+   join $out/tmp/$one.bed12.tmp.list $out/tmp/$one.bed12.tmp -1 1 -2 4 | tr '' \\t  > $out/tmp/$one.bed12.tmp2
+   
+   cat $out/tmp/$one.bed12.tmp2 | awk '$6>=60' | awk '{print $1"\t"$2 }' | sed -r 's/^(.+):([0-9]+)-([0-9]+)\t([a-z]+)$/\1\t\2\t\3\t\4/g' > $out/pieces.tmp
+   cat $out/pieces.tmp | awk -F'\t' '$2==1{print $1":"$3+1"\t"$2"-"$3 "\t" $4}' | sort -k1,1 > $out/pieces1.tmp1
+   cat $out/pieces.tmp | awk -F'\t' '$2!=1{print $1":"$2"\t"$2"-"$3 "\t" $4}' | sort -k1,1 > $out/pieces2.tmp1
+   #one upstream and the other downstream
+   join $out/pieces1.tmp1 $out/pieces2.tmp1 | awk '$3!=$5 {print $1 "\t" $2 "\t" $4}' > $out/pieces12.tmp1
 
    cat $out/pieces12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$3}' > $out/pieces1.tmp2
    cat $out/pieces12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$4}' > $out/pieces2.tmp2
    cat $out/pieces1.tmp2 $out/pieces2.tmp2 | sort > $out/long.tmp1
-   join -t$'\t' $out/pass2_intra/$one.bed12.tmp $out/long.tmp1 -1 4 -2 1 | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp2
+   join $out/tmp/$one.bed12.tmp $out/long.tmp1 -1 4 -2 1 | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp2
    
    count_long=$(cat $out/long.tmp2 | wc -l)
 
-   if [[ "$count_long" -gt 0 ]]; then
-  
+   if [ "$count_long" -gt 0 ]; then
+      
       cat $out/long.tmp2 | awk '$5==60' > $out/pass2_intra/$one.bed12
    fi
+    
+   #rm -r -f $out/tmp/$one.bed12.tmp
+   #rm -r -f $out/tmp/$one.bed12.tmp2
 
-   rm -r -f $out/pass2_intra/$one.bed12.tmp
 done
 
 echo "Step: to check_intra_OutOfCircle"

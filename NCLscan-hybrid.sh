@@ -139,29 +139,7 @@ join $out/tmp/inter.list $out/tmp/pass1.list  > $out/tmp/pass1_inter.list
 echo "Step: at least one supported long read"
 ## intra ##
 cat $out/tmp/pass1_intra.list | while read one
-do
-#   chr=$(echo $one | sed 's/:/\t/g' | awk '{print $1}')  
-#   cat $out/pass1/$one.bed12 | sort -k4,4 > $out/pass2_intra/$one.bed12.tmp
-#   
-#   cat $out/pass2_intra/$one.bed12.tmp | awk '$5>=60' | cut -f '4' | sed -r 's/^(.+):([0-9]+)-([0-9]+)$/\1\t\2\t\3/g' > $out/pieces.tmp
-#   cat $out/pieces.tmp | awk -F'\t' '$2==1{print $1":"$3+1"\t"$2"-"$3}' | sort -k1,1 > $out/pieces1.tmp1
-#   cat $out/pieces.tmp | awk -F'\t' '$2!=1{print $1":"$2"\t"$2"-"$3}' | sort -k1,1 > $out/pieces2.tmp1
-#   join -t$'\t' $out/pieces1.tmp1 $out/pieces2.tmp1 > $out/pieces12.tmp1
-#
-#   cat $out/pieces12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$3}' > $out/pieces1.tmp2
-#   cat $out/pieces12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$4}' > $out/pieces2.tmp2
-#   cat $out/pieces1.tmp2 $out/pieces2.tmp2 | sort > $out/long.tmp1
-#   join -t$'\t' $out/pass2_intra/$one.bed12.tmp $out/long.tmp1 -1 4 -2 1 | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp2
-#   
-#   count_long=$(cat $out/long.tmp2 | wc -l)
-#
-#   if [[ "$count_long" -gt 0 ]]; then
-#  
-#      cat $out/long.tmp2 | awk '$5==60' > $out/pass2_intra/$one.bed12
-#   fi
-#
-#   rm -r -f $out/pass2_intra/$one.bed12.tmp
-   
+do 
    cat $out/pass1/$one.bed12 | sort -k4,4 > $out/tmp/$one.bed12.tmp
    #one of the end position of split long reads within upstream/downstream 10 bp of donor site
    #the other of the end position of split long reads within upstream/downstream 10 bp of acceptor site
@@ -190,11 +168,19 @@ do
    cat $out/pieces1.tmp2 $out/pieces2.tmp2 | sort > $out/long.tmp1
    join $out/tmp/$one.bed12.tmp $out/long.tmp1 -1 4 -2 1 | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp2
    
-   count_long=$(cat $out/long.tmp2 | wc -l)
+   cat $out/long.tmp2 | grep ':1-' > $out/long.tmp2.1 
+   cat $out/long.tmp2 | grep -v ':1-' > $out/long.tmp2.2 
+   $bedtools_link bed12tobed6 -i $out/long.tmp2.1 > $out/long.tmp2.1.bed
+   $bedtools_link bed12tobed6 -i $out/long.tmp2.2 > $out/long.tmp2.2.bed
+   #two split fragements overlapped at least 50bp
+   $bedtools_link intersect -a $out/long.tmp2.1.bed -b $out/long.tmp2.2.bed  -s -wo | awk '$13 >=50' | awk -F'[\t:]' '$4==$11{print $0}' | awk '{print $4 "\n" $10}' | sort | uniq > $out/long.tmp2.overlap50.list
+   join -t$'\t' <(cat $out/long.tmp2 | sort -k4) $out/long.tmp2.overlap50.list -1 4 -2 1 | sort | uniq | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp3
+
+   count_long=$(cat $out/long.tmp3 | wc -l)
 
    if [ "$count_long" -gt 0 ]; then
       
-      cat $out/long.tmp2 | awk '$5==60' > $out/pass2_intra/$one.bed12
+      cat $out/long.tmp3 | awk '$5==60' > $out/pass2_intra/$one.bed12
    fi
     
    #rm -r -f $out/tmp/$one.bed12.tmp
@@ -236,12 +222,20 @@ do
    cat $out/pieces12.tmp1  | sed 's/:/\t/g' | awk '{print $1":"$4}' > $out/pieces2.tmp2
    cat $out/pieces1.tmp2 $out/pieces2.tmp2 | sort > $out/long.tmp1
    join -t$'\t' $out/pass2_inter/$one.bed12.tmp $out/long.tmp1 -1 4 -2 1 | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp2
+   
+   cat $out/long.tmp2 | grep ':1-' > $out/long.tmp2.1 
+   cat $out/long.tmp2 | grep -v ':1-' > $out/long.tmp2.2 
+   $bedtools_link bed12tobed6 -i $out/long.tmp2.1 > $out/long.tmp2.1.bed
+   $bedtools_link bed12tobed6 -i $out/long.tmp2.2 > $out/long.tmp2.2.bed
+   #two split fragements overlapped at least 50bp
+   $bedtools_link intersect -a $out/long.tmp2.1.bed -b $out/long.tmp2.2.bed  -s -wo | awk '$13 >=50' | awk -F'[\t:]' '$4==$11{print $0}' | awk '{print $4 "\n" $10}' | sort > $out/long.tmp2.overlap50.list
+   join -t$'\t' <(cat $out/long.tmp2 | sort -k4) $out/long.tmp2.overlap50.list -1 4 -2 1  | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp3
 
-   count_long=$(cat $out/long.tmp2 | wc -l)
+   count_long=$(cat $out/long.tmp3 | wc -l)
 
    if [[ "$count_long" -gt 0 ]]; then
   
-      cat $out/long.tmp2 | awk '$5>=60' > $out/pass2_inter/$one.bed12
+      cat $out/long.tmp3 | awk '$5>=60' > $out/pass2_inter/$one.bed12
    fi
 
    rm -r -f $out/pass2_inter/$one.bed12.tmp
@@ -259,7 +253,12 @@ rm -rf \
    $out/pieces2.tmp2 \
    $out/pieces12.tmp1 \
    $out/long.tmp1 \
-   $out/long.tmp2
+   $out/long.tmp2.1 \
+   $out/long.tmp2.2 \
+   $out/long.tmp2.1.bed \
+   $out/long.tmp2.2.bed \
+   $out/long.tmp2.overlap50.list \
+   $out/long.tmp3
 
 
 echo "Step: output intra result"

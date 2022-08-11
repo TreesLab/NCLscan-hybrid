@@ -49,4 +49,4 @@ do
    
 done
 
-rm -rf $output/one.sorted.
+rm -rf $output/one.sorted.tmp

@@ -154,8 +154,8 @@ do
    cat $out/tmp/$one.bed12.tmp | awk '{print $1 "\t" $2-1 "\t" $2 "\t " $4}' > $out/tmp/$one.bed12.tmp.OneSide
    cat $out/tmp/$one.bed12.tmp | awk '{print $1 "\t" $3-1 "\t" $3 "\t " $4}' > $out/tmp/$one.bed12.tmp.TheOtherSide
    cat $out/tmp/$one.bed12.tmp.OneSide $out/tmp/$one.bed12.tmp.TheOtherSide | sort -k1,1 -k2,2n > $out/tmp/$one.bed12.tmp.points
-   $bedtools_link intersect -a $out/tmp/$one.bed12.tmp.points -b $out/tmp/$one\_10bp.bed -f 1 -wa -wb | awk '{print $4 "\t" $8}' | sort | uniq > $out/tmp/$one.bed12.tmp.list
-   join $out/tmp/$one.bed12.tmp.list $out/tmp/$one.bed12.tmp -1 1 -2 4 | tr '' \\t  > $out/tmp/$one.bed12.tmp2
+   $bedtools_link intersect -a $out/tmp/$one.bed12.tmp.points -b $out/tmp/$one\_10bp.bed -f 1 -wa -wb | awk '{print $4 "\t" $8}' | sort -k1,1 | uniq > $out/tmp/$one.bed12.tmp.list
+   join $out/tmp/$one.bed12.tmp.list $out/tmp/$one.bed12.tmp  -1 1 -2 4 | tr '' \\t  > $out/tmp/$one.bed12.tmp2
    
    cat $out/tmp/$one.bed12.tmp2 | awk '$6>=60' | awk '{print $1"\t"$2 }' | sed -r 's/^(.+):([0-9]+)-([0-9]+)\t([a-z]+)$/\1\t\2\t\3\t\4/g' > $out/pieces.tmp
    cat $out/pieces.tmp | awk -F'\t' '$2==1{print $1":"$3+1"\t"$2"-"$3 "\t" $4}' | sort -k1,1 > $out/pieces1.tmp1
@@ -173,7 +173,7 @@ do
    $bedtools_link bed12tobed6 -i $out/long.tmp2.1 > $out/long.tmp2.1.bed
    $bedtools_link bed12tobed6 -i $out/long.tmp2.2 > $out/long.tmp2.2.bed
    #two split fragements overlapped at least 50bp
-   $bedtools_link intersect -a $out/long.tmp2.1.bed -b $out/long.tmp2.2.bed  -s -wo | awk '$13 >=50' | awk -F'[\t:]' '$4==$11{print $0}' | awk '{print $4 "\n" $10}' | sort | uniq > $out/long.tmp2.overlap50.list
+   $bedtools_link intersect -a $out/long.tmp2.1.bed -b $out/long.tmp2.2.bed  -s -wo | awk '$13 >=50' | awk -F'[\t:]' '$4==$11{print $0}' | awk '{print $4 "\n" $10}' | sort -k1,1 | uniq > $out/long.tmp2.overlap50.list
    join -t$'\t' <(cat $out/long.tmp2 | sort -k4) $out/long.tmp2.overlap50.list -1 4 -2 1 | sort | uniq | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp3
 
    count_long=$(cat $out/long.tmp3 | wc -l)

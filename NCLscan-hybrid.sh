@@ -253,6 +253,7 @@ rm -rf \
    $out/pieces2.tmp2 \
    $out/pieces12.tmp1 \
    $out/long.tmp1 \
+   $out/long.tmp2 \
    $out/long.tmp2.1 \
    $out/long.tmp2.2 \
    $out/long.tmp2.1.bed \

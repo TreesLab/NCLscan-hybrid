@@ -192,6 +192,8 @@ echo "Step: to check_intra_OutOfCircle"
 ## Out of circle: long read extends more than 100 bp on one side (upstream or downstream)  
 $NCLscan_hybrid_bin/OutOfCircle.sh -input_folder $out/pass2_intra -o $out/$out -L 100
 
+##intra_view##
+$NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/OC.events
 
 echo  "Step: to check_intra_WithinCircle"
 join -t$'\t' $out/tmp/$out\_to_FlankingRead_80.paf.with_id.tmp $out/tmp/intra.list | cut -f '2-' > $out/tmp/$out\_to_FlankingRead_80.junction.intra.paf
@@ -202,10 +204,6 @@ $NCLscan_hybrid_bin/WithinCircle.sh -input_folder $out/tmp/$out\_to_FlankingRead
 $NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/WithinCircle_events
 
 
-
-
-##intra_view##
-$NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/pass2_intra
 
 
 ## inter ##

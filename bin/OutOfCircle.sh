@@ -46,7 +46,9 @@ fi
 
 
 # Out of circle: long read extends more than 100 bp on one side (upstream or downstream)  
+mkdir -p OC.events
 echo -n > $out\_OC.result  
+echo -n > $out\_one.OCreadID.tmp
 
 ls $input | while read one
 do
@@ -65,16 +67,26 @@ do
    countOC=0
    echo $long_list | while read oneLong 
    do
+      pieces_OneLongRead=$(join -t$'\t' $out\_one.sorted.tmp <(echo $oneLong) | wc -l)
       upstream_OneLongRead=$(join -t$'\t' $out\_one.sorted.tmp <(echo $oneLong) | cut -f '2-' | awk '$1==chr' chr=$intra_chr | awk '{print $2 " " $3}' | tr ' ' \\n | sort | head -n 1)
       downstream_OneLongRead=$(join -t$'\t' $out\_one.sorted.tmp <(echo $oneLong) | cut -f '2-' | awk '$1==chr' chr=$intra_chr | awk '{print $2 " " $3}' | tr ' ' \\n | sort | tail -n 1)
-     
-      if [[ $upstream_OneLongRead < $upstream_pos ]] || [[ $downstream_OneLongRead > $downstream_pos ]]
-        then OC=1  countOC=$(( $countOC + 1 ))
-        else OC=0  countOC=$(( $countOC ))
-      fi
+      
+      if [[ "$pieces_OneLongRead" -eq 2 ]]; then
+         if [[ "$upstream_OneLongRead" -lt "$upstream_pos" ]] || [[ "$downstream_OneLongRead" -gt "$downstream_pos" ]]
+           then {
+            OC=1  countOC=$(( $countOC + 1 ))
+            echo $oneLong >>  $out\_one.OCreadID.tmp
+           }
+          else OC=0  countOC=$(( $countOC ))
+         fi
+      fi  
     done
 
-   if [[ $countOC > 0  ]] 
+   join $out\_one.sorted.tmp <(cat $out\_one.OCreadID.tmp | sort -k1,1) | tr ' ' \\t | cut -d$'\t' -f 2- > OC.events/$one
+
+      
+
+   if [[ "$countOC" -gt 0  ]] 
         then OC=1
         else OC=0 
       fi
@@ -83,7 +95,5 @@ do
    echo $one_name   $OC   $countOC >> $out\_OC.result  
 done
 
-
-
-#rm -r -f read_list.tmp
-#rm -r -f input.list
+rm -r -f $out\_one.sorted.tmp
+rm -r -f $out\_one.OCreadID.tmp

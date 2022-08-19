@@ -82,7 +82,7 @@ do
       fi  
     done
 
-   join $out\_one.sorted.tmp <(cat $out\_one.OCreadID.tmp | sort -k1,1) | tr ' ' \\t | cut -d$'\t' -f 2- > OC.events/$one
+   join $out\_one.sorted.tmp <(cat $out\_one.OCreadID.tmp | sort -k1,1) | tr ' ' \\t | cut -d$'\t' -f 2- > $out/OC_events/$one
 
       
 

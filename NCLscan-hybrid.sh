@@ -193,7 +193,7 @@ echo "Step: to check_intra_OutOfCircle"
 $NCLscan_hybrid_bin/OutOfCircle.sh -input_folder $out/pass2_intra -o $out/$out -L 100
 
 ##intra_view##
-$NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/OC.events
+$NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/OC_events
 
 echo  "Step: to check_intra_WithinCircle"
 join -t$'\t' $out/tmp/$out\_to_FlankingRead_80.paf.with_id.tmp $out/tmp/intra.list | cut -f '2-' > $out/tmp/$out\_to_FlankingRead_80.junction.intra.paf

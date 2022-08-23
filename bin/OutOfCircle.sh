@@ -46,8 +46,10 @@ fi
 
 
 # Out of circle: long read extends more than 100 bp on one side (upstream or downstream)  
-mkdir -p OC.events
-echo -n > $out\_OC.result  
+mkdir -p \
+    $out/OC_events 
+
+echo -n > $out/$out\_OC.result 
 echo -n > $out\_one.OCreadID.tmp
 
 ls $input | while read one
@@ -92,7 +94,7 @@ do
       fi
       
 
-   echo $one_name   $OC   $countOC >> $out\_OC.result  
+   echo $one_name   $OC   $countOC >> $out/$out\_OC.result  
 done
 
 rm -r -f $out\_one.sorted.tmp

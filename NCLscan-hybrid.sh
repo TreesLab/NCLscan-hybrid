@@ -190,7 +190,7 @@ done
 
 echo "Step: to check_intra_OutOfCircle"
 ## Out of circle: long read extends more than 100 bp on one side (upstream or downstream)  
-$NCLscan_hybrid_bin/OutOfCircle.sh -input_folder $out/pass2_intra -o $out/$out -L 100
+$NCLscan_hybrid_bin/OutOfCircle.sh -input_folder $out/pass2_intra -o $out -L 100
 
 ##intra_view##
 $NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/OC_events
@@ -241,7 +241,7 @@ do
 done
 
 ##inter_view##
-$NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/pass2_inter
+#$NCLscan_hybrid_bin/BrowserView.sh -input_folder $out/pass2_inter
 
 rm -rf \
    $out/pieces.tmp \

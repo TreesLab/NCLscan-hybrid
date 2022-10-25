@@ -81,19 +81,17 @@ cat $tmp_dir/NCLinput |awk '$6=="-" {print $4 "\t" $5-FL "\t" $5 "\t" $1":"$2":"
 
 cat $tmp_dir/NCL_Dplus.bed $tmp_dir/NCL_Dminus.bed | sort -k1,1 -k2,2n > $tmp_dir/NCL_flank.1.bed
 cat $tmp_dir/NCL_Aplus.bed $tmp_dir/NCL_Aminus.bed | sort -k1,1 -k2,2n > $tmp_dir/NCL_flank.2.bed
-#$bedtoolslink intersect -a $tmp_dir/exonic_ranges.bed -b $tmp_dir/NCL_flank.1.bed -s -wb | awk '{print $1 "\t" $2 "\t" $3 "\t" $10 "\t" $5 "\t" $6}' | sort -k1,1 -k2,2n | awk -F"\t" '!_[$4]++' > $tmp_dir/NCL_flank.1_exonic.bed 
-#$bedtoolslink intersect -a $tmp_dir/exonic_ranges.bed -b $tmp_dir/NCL_flank.2.bed -s -wb | awk '{print $1 "\t" $2 "\t" $3 "\t" $10 "\t" $5 "\t" $6}' | sort -k1,1 -k2,2n | awk -F"\t" '!_[$4]++' > $tmp_dir/NCL_flank.2_exonic.bed 
+$bedtoolslink intersect -a $tmp_dir/exonic_ranges.bed -b $tmp_dir/NCL_flank.1.bed -s -wb | awk '{print $1 "\t" $2 "\t" $3 "\t" $10 "\t" $5 "\t" $6}' | sort -k1,1 -k2,2n | awk -F"\t" '!_[$4]++' > $tmp_dir/NCL_flank.1_exonic.bed 
+$bedtoolslink intersect -a $tmp_dir/exonic_ranges.bed -b $tmp_dir/NCL_flank.2.bed -s -wb | awk '{print $1 "\t" $2 "\t" $3 "\t" $10 "\t" $5 "\t" $6}' | sort -k1,1 -k2,2n | awk -F"\t" '!_[$4]++' > $tmp_dir/NCL_flank.2_exonic.bed 
 
+cat $tmp_dir/NCL_flank.1_exonic.bed $tmp_dir/NCL_flank.2_exonic.bed | sort -k1,1 -k2,2n > $tmp_dir/NCL_flank_exonic.bed
 
-cat $tmp_dir/NCL_flank.1.bed $tmp_dir/NCL_flank.2.bed | sort -k1,1 -k2,2n > $tmp_dir/NCL_flank.bed
+$bedtoolslink getfasta -fi $genome -bed $tmp_dir/NCL_flank_exonic.bed -s -name -fo $tmp_dir/NCL_flank_exnic.fa
+$mpslink $tmp_dir/NCL_flank_exnic.fa  $output\_flanking_merged.fa
 
-
-$bedtoolslink getfasta -fi $genome -bed $tmp_dir/NCL_flank.bed -s -name -fo $tmp_dir/NCL_flank.fa
-$mpslink $tmp_dir/NCL_flank.fa  $output\_flanking_merged.fa
-
-cat $tmp_dir/NCL_flank.1.bed | awk '{print $4 "\t" $3-$2}' | sed 's/\.1//g' | tr ' ' \\t | sort -k1,1 > $tmp_dir/NCL_flank.1.length
-cat $tmp_dir/NCL_flank.2.bed | awk '{print $4 "\t" $3-$2}' | sed 's/\.2//g' | tr ' ' \\t | sort -k1,1 > $tmp_dir/NCL_flank.2.length
-join -t$'\t' $tmp_dir/NCL_flank.1.length $tmp_dir/NCL_flank.2.length > $output\_NCL_flanking.length
+cat $tmp_dir/NCL_flank.1_exonic.bed | awk '{print $4 "\t" $3-$2}' | sed 's/\.1//g' | tr ' ' \\t | sort -k1,1 > $tmp_dir/NCL_flank.1_exonic.length
+cat $tmp_dir/NCL_flank.2_exonic.bed | awk '{print $4 "\t" $3-$2}' | sed 's/\.2//g' | tr ' ' \\t | sort -k1,1 > $tmp_dir/NCL_flank.2_exonic.length
+join -t$'\t' $tmp_dir/NCL_flank.1_exonic.length $tmp_dir/NCL_flank.2_exonic.length > $output\_NCL_flanking.length
 
 
 echo "Output:" $output"_flanking_merged.fa;" $output"_NCL_flanking.length"

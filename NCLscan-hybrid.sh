@@ -109,7 +109,7 @@ fi
 
 $minimap2_link -t $threads -ax splice $genome_prefix.mmi $out/tmp/All_split.fa | $samtools_link view -bS - > $out/tmp/All.bam
 
-$bedtools_link bamtobed -bed12 -i $out/tmp/All.bam | awk '$1~/^chr[0-9XY]/'| awk '$5>0'| sort -k4,4 > $out/tmp/All.bed12
+$bedtools_link bamtobed -bed12 -i $out/tmp/All.bam | awk '$1~/^(chr)?[12]?[0-9XY]$/'| awk '$5>0'| sort -k4,4 > $out/tmp/All.bed12
 
 cat $out/tmp/All.bed12 | awk -F'\t' '{print $4"\t"$0}' | sort -k1,1 > $out/tmp/All.bed12.sorted
 cat $out/tmp/All.bed12.sorted | cut -f'1' | uniq -c | awk '$1==1 {print $2}'  > $out/tmp/All.bed12.uniq.list

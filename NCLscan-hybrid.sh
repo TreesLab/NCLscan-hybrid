@@ -186,7 +186,7 @@ do
    $bedtools_link bed12tobed6 -i $out/long.tmp2.2 > $out/long.tmp2.2.bed
    #two split fragements overlapped at least 50bp
    $bedtools_link intersect -a $out/long.tmp2.1.bed -b $out/long.tmp2.2.bed  -s -wo | awk '$13 >=50' | awk -F'[\t:]' '$4==$11{print $0}' | awk '{print $4 "\n" $10}' | sort -k1,1 | uniq > $out/long.tmp2.overlap50.list
-   join -t$'\t' <(cat $out/long.tmp2 | sort -k4) $out/long.tmp2.overlap50.list -1 4 -2 1 | sort | uniq | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp3
+   join -t$'\t' <(cat $out/long.tmp2 | sort -k4,4) $out/long.tmp2.overlap50.list -1 4 -2 1 | sort | uniq | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp3
 
    count_long=$(cat $out/long.tmp3 | wc -l)
 
@@ -239,7 +239,7 @@ do
    $bedtools_link bed12tobed6 -i $out/long.tmp2.2 > $out/long.tmp2.2.bed
    #two split fragements overlapped at least 50bp
    $bedtools_link intersect -a $out/long.tmp2.1.bed -b $out/long.tmp2.2.bed  -s -wo | awk '$13 >=50' | awk -F'[\t:]' '$4==$11{print $0}' | awk '{print $4 "\n" $10}' | sort > $out/long.tmp2.overlap50.list
-   join -t$'\t' <(cat $out/long.tmp2 | sort -k4) $out/long.tmp2.overlap50.list -1 4 -2 1  | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp3
+   join -t$'\t' <(cat $out/long.tmp2 | sort -k4,4) $out/long.tmp2.overlap50.list -1 4 -2 1  | awk '{print $2 "\t" $3 "\t" $4 "\t" $1 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' > $out/long.tmp3
 
    count_long=$(cat $out/long.tmp3 | wc -l)
 
@@ -282,9 +282,9 @@ do
    cat $out/pass2_intra/$one | awk '{print $4}' | sed 's/:/\t/g' | awk 'NF{NF-=1};1' | sort | uniq | wc -l | awk '{print event "\t" $1}' event=$one | sed 's/\.bed12//g' >> $out/tmp/NCL_long_intra.tmp1
 done 
 
-cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list | awk '{print $3}' | sort | uniq -c | awk '{print $2 "\t" $1}' |  sort -k1 > $out/WithinCircle_tmp/FlankingRead_80_twice_intra.tmp1
-cat $out/tmp/NCL_long_intra.tmp1 | sort -k1 > $out/tmp/NCL_long_intra.tmp2
-cat $out/tmp/NCL_long_intra.tmp2 $out/WithinCircle_tmp/FlankingRead_80_twice_intra.tmp1  | awk '{print $1}' | sort -k1 | uniq | sort -k1 > $out/tmp/NCL_long_intra.tmp3
+cat $out/WithinCircle_tmp/FlankingRead_80_twice_intra.list | awk '{print $3}' | sort | uniq -c | awk '{print $2 "\t" $1}' |  sort -k1,1 > $out/WithinCircle_tmp/FlankingRead_80_twice_intra.tmp1
+cat $out/tmp/NCL_long_intra.tmp1 | sort -k1,1 > $out/tmp/NCL_long_intra.tmp2
+cat $out/tmp/NCL_long_intra.tmp2 $out/WithinCircle_tmp/FlankingRead_80_twice_intra.tmp1  | awk '{print $1}' | sort -k1,1 | uniq | sort -k1,1 > $out/tmp/NCL_long_intra.tmp3
 
 join -o 1.1 2.2 $out/tmp/NCL_long_intra.tmp3 $out/tmp/NCL_long_intra.tmp2  -a1 -e0 > $out/tmp/NCL_long_intra.tmp4
 join -o 1.1 1.2 2.2 $out/tmp/NCL_long_intra.tmp4 $out/WithinCircle_tmp/FlankingRead_80_twice_intra.tmp1 -a1 -e0 > $out/tmp/NCL_long_intra.tmp5
@@ -302,6 +302,6 @@ cat $out/tmp/pass2_inter.list | while read one
 do  
    cat $out/pass2_inter/$one | awk '{print $4}' | sed 's/:/\t/g' | awk 'NF{NF-=1};1' | sort | uniq | wc -l | awk '{print event "\t" $1}' event=$one | sed 's/\.bed12//g' >> $out/tmp/NCL_long_inter.tmp1
 done 
-cat $out/tmp/NCL_long_inter.tmp1 | sort -k1 > $out/tmp/NCL_long_inter.tmp2
+cat $out/tmp/NCL_long_inter.tmp1 | sort -k1,1 > $out/tmp/NCL_long_inter.tmp2
 join $out/tmp/NCL_long_inter.tmp2 $out/tmp/result.tmp | tr ' ' \\t | sort | uniq  > $out/$out\_long_inter.result
 

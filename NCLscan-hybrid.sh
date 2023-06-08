@@ -67,7 +67,7 @@ echo -n > $out/$out\_long_inter.result
 
 echo "Step: to create flankingSeqs of NCL events" 
 
-$NCLscan_hybrid_bin/FlankingSeq.sh \
+$NCLscan_hybrid_bin/FlankingSeq_exonic.sh \
    -nclscan $NCLscan \
    -fl 100 \
    -gtf $gtf \
@@ -77,7 +77,7 @@ $NCLscan_hybrid_bin/FlankingSeq.sh \
    -o $out/$out\_100bp
 
 echo "Step: to align long reads against flankingSeqs"
-# $minimap2_link -d $out/$out\_100bp_flanking_merged.mmi $out/$out\_100bp_flanking_merged.fa   
+$minimap2_link -d $out/$out\_100bp_flanking_merged.mmi $out/$out\_100bp_flanking_merged.fa   
 $minimap2_link -t $threads -x map-$long_type $out/$out\_100bp_flanking_merged.fa $longread -c --secondary=no > $out/tmp/$out\_to_FlankingRead.paf
 
 cat $out/tmp/$out\_to_FlankingRead.paf | sort -k6,6 -k1,1 -k3,3n -k4,4n > $out/tmp/$out\_to_FlankingRead.sorted.paf

@@ -67,7 +67,7 @@ echo -n > $out/$out\_long_inter.result
 
 echo "Step: to create flankingSeqs of NCL events" 
 
-$NCLscan_hybrid_bin/FlankingSeq.sh \
+$NCLscan_hybrid_bin/FlankingSeq_exonic.sh \
    -nclscan $NCLscan \
    -fl 100 \
    -gtf $gtf \
